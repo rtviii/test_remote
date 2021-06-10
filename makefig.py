@@ -46,15 +46,10 @@ countall  =  countall/c
 time          =  np.arange(len(fitall))
 figur, axarr  =  plt.subplots(2,2)
 
-# axarr[0,0].plot(time, countall, label="Type {}".format(exp_number), color="blue")
-# axarr[0,0].set_ylabel('Individual Count')
-# axarr[0,0].legend()
 
 axarr[0,1].plot(time, fitall, label="Fitness")
 axarr[0,1].set_ylabel('Populationwide Fitness')
 
-# axarr[1,1].plot(time, brateall, label="Birthrate")
-# axarr[1,1].set_ylabel('Birthrate')
 
 time2 = np.arange(len(mean0all))
 
@@ -67,5 +62,5 @@ axarr[1,0].legend()
 figure = plt.gcf()
 figure.set_size_inches(20,8)
 plt.suptitle(f"Experiment {exp_number}")
-figure.text(0.5, 0.04, 'BD Process Iteration', ha='center', va='center')
+figure.text(0.5, 0.04, f'BD Process Iteration(every {1000} iterations)', ha='center', va='center')
 plt.show()

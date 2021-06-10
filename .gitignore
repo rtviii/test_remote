@@ -3,6 +3,8 @@ polyvenv
 *.csv
 *.json
 *.zip
+*.png
+
 
 
 

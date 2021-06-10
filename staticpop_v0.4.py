@@ -4,6 +4,7 @@ from functools import reduce
 import functools
 import json
 from operator import xor
+from pprint import pprint
 import xxhash
 import csv
 import sys, os
@@ -52,9 +53,9 @@ VERBOSE                       =  True if args.verbose is not None and args.verbo
 SHIFTING_FITNESS_PEAK         =  args.shifting_peak if args.shifting_peak is not None else False
 CONNECTIVITY_FLAG             =  args.connectivity if args.connectivity is not None else False
 
-MUTATION_RATE_ALLELE          =  0.0001
+MUTATION_RATE_ALLELE          =  0.5
 MUTATION_VARIANTS_ALLELE      =  np.arange(-1,1,0.1)
-MUTATION_RATE_CONTRIB_CHANGE  =  0.0001
+MUTATION_RATE_CONTRIB_CHANGE  =  0.5
 
 MUTATION_RATE_DUPLICATION     =  0
 DEGREE                        =  1
@@ -672,7 +673,7 @@ ftm             = Fitmap( STD,AMPLITUDE, [0,0,0,0])
 init_population = [ 
     Individual(INDIVIDUAL_INITS[str(INDTYPE)]['alleles'],
     GPMap(INDIVIDUAL_INITS[str(INDTYPE)]['coefficients'])) 
-    for x in range(1000)
+    for x in range(40)
     ]
 
 u = Universe(init_population,ftm)
@@ -733,3 +734,6 @@ if outdir:
 
     with open(os.path.join(outdir,exp, f'gpmaps_{instance}.json'), 'w') as outfile:
         json.dump(u.aggregate_gpmaps(),outfile)
+
+
+pprint(u.phenotypeHM)
