@@ -20,10 +20,9 @@ countall  =  0
 c = 0
 
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_number}/exp{exp_number}/*.parquet"):
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_number}/exp{exp_number}/fitness_data/*.parquet"):
 
     data       =  pd.read_parquet(file)
-
 
     mean0all   +=  np.array(data['mean0'])
     mean1all   +=  np.array( data['mean1'] )

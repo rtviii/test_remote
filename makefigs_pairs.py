@@ -19,17 +19,15 @@ cs = 0
 ca = 0
 
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_sym}/exp{exp_sym}/*.parquet"):
-    data =  pd.read_parquet(file)
-    # if np.array(data[f'{exp_sym}'])[len(np.array(data[f'{exp_sym}']))-1] == 1:
-    fitall_sym     +=  np.array( data['fit'] )
-    cs +=1
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_sym}/exp{exp_sym}/fitness_data/*.parquet"):
+    data        = pd.read_parquet(file)
+    fitall_sym += np.array( data['fit'] )
+    cs         += 1
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_asym}/exp{exp_asym}/*.parquet"):
-    data       =  pd.read_parquet(file)
-
-    fitall_asym     +=  np.array(data['fit'])
-    ca +=1
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_asym}/exp{exp_asym}/fitness_data/*.parquet"):
+    data         = pd.read_parquet(file)
+    fitall_asym += np.array(data['fit'])
+    ca          += 1
 
 fitall_sym                                =                       fitall_sym  /cs
 fitall_asym                               =                       fitall_asym /ca
@@ -42,8 +40,8 @@ figure = plt.gcf()
 plt.legend()
 figure.set_size_inches(20,8)
 plt.title("Average Fitness")
-# plt.suptitle(f"Experiments {exp_sym},{exp_asym}",fontsize=20)
-figure.text(0.5, 0.04, 'BD Process Iteration (1000 iteration)', ha='center', va='center')
+plt.suptitle(f"Experiments {exp_sym},{exp_asym}",fontsize=20)
+figure.text(0.5, 0.04, 'BD Process Iteration (1000 iterations)', ha='center', va='center')
 # plt.show()
 
 
