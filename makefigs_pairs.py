@@ -10,7 +10,7 @@ import glob, os
 
 exp_sym  = int( sys.argv[1] )
 exp_asym = int( sys.argv[2] )
-folder   = str(sys.argv[3])
+folder   = str( sys.argv[3] )
 
 fitall_sym  = 0
 fitall_asym = 0
@@ -19,12 +19,14 @@ cs = 0
 ca = 0
 
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_sym}/exp{exp_sym}/fitness_data/*.parquet"):
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_sym}/fitness_data/*.parquet"):
+
     data        = pd.read_parquet(file)
-    fitall_sym += np.array( data['fit'] )
+    fitall_sym += np.array(data['fit'])
     cs         += 1
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_asym}/exp{exp_asym}/fitness_data/*.parquet"):
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_asym}/fitness_data/*.parquet"):
+
     data         = pd.read_parquet(file)
     fitall_asym += np.array(data['fit'])
     ca          += 1
