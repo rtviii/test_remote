@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "../staticpopv6.py", line 399, in <module>
-  File "../staticpopv6.py", line 376, in dump_state
-FileNotFoundError: [Errno 2] No such file or directory: '/scratch/ex-kdd-1/rt/staticpopv5/exp20/var_covar/var_covar__itern45100000.json'

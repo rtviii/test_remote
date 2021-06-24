@@ -28,14 +28,15 @@ def dir_path(string):
 
 parser = argparse.ArgumentParser(description='Simulation presets')
 
-parser.add_argument('-save'  , '--outdir'              , type=dir_path, help="""Specify the path to write the results of the simulation."""             )
-parser.add_argument("-it"    , "--itern"               , type=int      , help="The number of iterations"                                                )
-parser.add_argument("-ls"    , "--landscape_increment" , type=float    , required=True, help="Simulation tag for the current instance."                 )
-parser.add_argument("-sim"   , "--siminst"             , type=int      , help="Simulation tag for the current instance."                                )
-parser.add_argument("-SP"    , "--shifting_peak"       , type=int      , choices=[-1,1], help="Flag for whether the fitness landscape changes or not.")
-parser.add_argument("-exp"   , "--experiment"          , type=int                                                                                       )
-parser.add_argument('-t'     , '--type'                , type=int      , required=True, help='Types involved in experiment'                             )
-parser.add_argument('-initn' , '--initial_number'      , type=int      , help='Types involved in experiment'                                            )
+parser.add_argument('-save'     , '--outdir'               , type=dir_path, help="""Specify the path to write the results of the simulation."""           )
+parser.add_argument("-it"       , "--itern"                , type=int      , help="The number of iterations"                                              )
+parser.add_argument("-ls"       , "--landscape_increment"  , type=float    , required=True, help="Simulation tag for the current instance."               )
+parser.add_argument("-sim"      , "--siminst"              , type=int      , help="Simulation tag for the current instance."                              )
+parser.add_argument("-SP"       , "--shifting_peak"        , type=int      , choices=[-1,1], help="Flag for whether the fitness landscape changes or not.")
+parser.add_argument('-t'        , '--type'                 , type=int      , required=True, help='Types involved in experiment'                           )
+parser.add_argument('-initn'    , '--initial_number'       , type=int      , help='Types involved in experiment'                                          )
+parser.add_argument('-gpm_rate' , '--gpmrate'      , type=float    , help=''                                          )
+parser.add_argument('-alm_rate'  , '--almrate' , type=float    , help='Types involved in experiment'                                          )
 
 args           = parser.parse_args()
 itern          = int(args.itern if args.itern is not None else 0)
@@ -45,19 +46,17 @@ outdir         = args.outdir if args.outdir is not None else 0
 INDTYPE               = args.type
 EXP                   = "exp{}".format(INDTYPE)
 POPN                  = args.initial_number if args.initial_number is not None else 1000
-EXPERIMENT            = args.experiment if args.experiment is not None else "Unspecified"
 SHIFTING_FITNESS_PEAK = args.shifting_peak if args.shifting_peak is not None else False
-LANDSCAPE_INCREMENT          = float(args.landscape_increment)
+LANDSCAPE_INCREMENT   = float(args.landscape_increment)
 
-
-MUTATION_RATE_ALLELE         = 0.0001
-MUTATION_VARIANTS_ALLELE     = np.arange(-1,1,0.1)
-MUTATION_RATE_CONTRIB_CHANGE = 0.0001
+MUTATION_RATE_ALLELE         = 0.0001 if args.almrate is None else float(args.almrate  )
+MUTATION_VARIANTS_ALLELE     =           np  .arange                    (-1,1,0.1      )
+MUTATION_RATE_CONTRIB_CHANGE = 0.0001 if args.gpmrate is None else float( args.gpmrate )
 DEGREE                       = 1
-COUNTER_RESET                = 100
+COUNTER_RESET                = 500000
 STD                          = 1
 AMPLITUDE                    = 1
-LOG_EVERY                    = int(       1e3   )
+LOG_EVERY                    = int(1e3)
 DUMP_STATE_EVERY             = 10000
 
 INDIVIDUAL_INITS     =  {   
@@ -165,11 +164,7 @@ INDIVIDUAL_INITS     =  {
    },
 }
 
-[ os.makedirs(os.path.join(outdir, intern_path), exist_ok=True) for intern_path in ['var_covar','end_phenotypes','fitness_data']]
-
-
-
-
+[ os.makedirs(os.path.join(outdir, intern_path), exist_ok=True) for intern_path in ['var_covar','end_phenotypes','fitness_data', 'terminal']]
 
 class Fitmap():
     def __init__(self,std:float, amplitude:float, mean:np.ndarray)->None: 
@@ -237,10 +232,12 @@ class Universe:
 
     def __init__ (self, initial_population:List[Individual], Fitmap:Fitmap) -> None:
         self.Fitmap                           = Fitmap
+
         # * a dictionary of phenotype
+
         self.phenotypeHM = {}
-        self.poplen                           = 0
-        self.iter                             = 0
+        self.poplen      = 0
+        self.iter        = 0
 
         for i in initial_population:
             self.birth(i)
@@ -248,7 +245,6 @@ class Universe:
     def aggregate_gpmaps(self)->dict:
 
         _ = {}
-
         for ph in self.phenotypeHM:
             for index, ind in enumerate(self.phenotypeHM[ph]['individuals']):
                 key = xxhash.xxh64(str(ind.gpmap.get_contributions())).hexdigest()
@@ -324,6 +320,7 @@ class Universe:
         self.poplen+=1
             
     def get_variance(self)->Tuple[np.ndarray, np.ndarray]:
+
         traits = {
             0:np.array([]),
             1:np.array([]),
@@ -357,8 +354,32 @@ class Universe:
             return self.phenotypeHM[K]['fitness']
         else:
             return self.Fitmap.getMap()(ind.phenotype)
-    
-    def dump_state(self, itern:int)->None:
+
+    def dump_state(self, output_directory:str)->None:
+
+        terminalpath = os.path.join(output_directory,'terminal')
+
+        indout   = os.path.join(terminalpath, f'individuals_{instance}.json')
+        indn     = 1
+        ind_dump = {
+            'fitness'   : self.Fitmap.mean.tolist(),
+            'population': {}
+        }
+        for phen in self.phenotypeHM:
+            ind_dump['population'][phen] ={}
+
+            for individual in self.phenotypeHM[phen]['individuals']:
+                individual:Individual
+                ind_dump['population'][phen][indn] = {
+                    "alleles": individual.alleles.tolist(),
+                    "gpmap"  : individual.gpmap.coeffs_mat.tolist()
+                }
+                indn+=1
+
+        with open(indout, 'w') as out:
+            json.dump(ind_dump,out,sort_keys=True, indent=4)
+
+    def write_var_covar(self, itern:int)->None:
 
         fitness = self.get_avg_fitness()
         var, covar  = tuple(map( lambda _: np.around(_,5).tolist(),self.get_variance()))
@@ -375,13 +396,31 @@ class Universe:
 count              =  []
 fit                =  []
 
+
 if SHIFTING_FITNESS_PEAK:
     lsc  =  np.array([], ndmin=2)
 
-initial_landscape = np    . array([0, 0, 0, 0], dtype=np  .float64)
 
-mean              = np    . array(initial_landscape,        dtype     = np  .float64)
-ftm               = Fitmap( STD                    ,        AMPLITUDE,  mean        )
+
+# *-----------------------------------------------------------------------------------
+
+# if SHIFTING_FITNESS_PEAK == -1:
+#     if LANDSCAPE_INCREMENT  <0.9:
+#         initial_landscape= np.random.choice(np.arange(-1,1,0.1),4)
+#     else: 
+#         initial_landscape= np.random.choice([1,0,-1], 4)
+# elif SHIFTING_FITNESS_PEAK == 1:
+#     if LANDSCAPE_INCREMENT< 0.9:
+#         initial_landscape= [ np.random.choice((np.arange(-1,1,0.1)))]*4
+#     else:
+#         initial_landscape= [ np.random.choice([1,0,-1]) ]*4 
+
+initial_landscape = [0,0,0,0]
+# *-----------------------------------------------------------------------------------
+
+initial_landscape = np.array(initial_landscape, dtype=np.float64)
+mean              = np.array(initial_landscape,dtype=np.float64)
+ftm               = Fitmap( STD,AMPLITUDE, mean)
 
 init_population   = [ 
     Individual(INDIVIDUAL_INITS[str(INDTYPE)]['alleles'],
@@ -392,36 +431,42 @@ init_population   = [
 u = Universe(init_population,ftm)
 
 
-print(
-f"""
-MUTATION_RATE_ALLELE         = {MUTATION_RATE_ALLELE}
-MUTATION_RATE_CONTRIB_CHANGE = {MUTATION_RATE_CONTRIB_CHANGE}
-COUNTER_RESET                = {COUNTER_RESET}
-STD                          = {STD}
-AMPLITUDE                    = {AMPLITUDE}
-LOG_EVERY                    = {LOG_EVERY}
-DUMP_STATE_EVERY             = {DUMP_STATE_EVERY}
----------------------------------------------------
-- experiment type                                   {EXP}
-- Initialized population to #                       {POPN} 
-- Initial fitness is                                {initial_landscape}
-- Landscape increment                               {LANDSCAPE_INCREMENT}
-- Shifting Fitness Peak                             {SHIFTING_FITNESS_PEAK}
-""")
+# print(
+# f"""
+# MUTATION_RATE_ALLELE         = {MUTATION_RATE_ALLELE}
+# MUTATION_RATE_CONTRIB_CHANGE = {MUTATION_RATE_CONTRIB_CHANGE}
+# COUNTER_RESET                = {COUNTER_RESET}
+# STD                          = {STD}
+# AMPLITUDE                    = {AMPLITUDE}
+# LOG_EVERY                    = {LOG_EVERY}
+# DUMP_STATE_EVERY             = {DUMP_STATE_EVERY}
+# \n
+# \n 
+
+# ---------------------------------------------------
+
+# - experiment type                                   {EXP}
+# - Initialized population to #                       {POPN} 
+# - Initial fitness is                                {initial_landscape}
+# - Landscape increment                               {LANDSCAPE_INCREMENT}
+# - Shifting Fitness Peak                             {SHIFTING_FITNESS_PEAK}
+
+# ---------------------------------------------------
+# \n
+# \n 
+# """)
+
+
 for it in range(itern):
 
     if it > itern-(math.ceil(itern/3)) and not(it%(DUMP_STATE_EVERY)):
-        u.dump_state(it)
+        u.write_var_covar(it)
 
     if not it % LOG_EVERY:
         fit.append(u.get_avg_fitness())
         if SHIFTING_FITNESS_PEAK!=0:
             lsc = np.append(lsc, mean)
 
-# TODO:  -The initial mean for all is [1111]
-# TODO:  -All 4 types have the chance of hovering at the boundaries (1,-1)
-# TODO:  -Large increments are multiplied randomly by 1/-1
-# TODO:  -Small increments are checked individually. (if at boundary -- an increment of opposite sign is added conditional on a cointoss )
 
     if ((not it%COUNTER_RESET) and SHIFTING_FITNESS_PEAK!=0):        
 
@@ -431,8 +476,14 @@ for it in range(itern):
             # *Large IT
             if abs(LANDSCAPE_INCREMENT) > 0.9:
             
-                coin  = np.random.choice([-1,1])
-                mean *= coin 
+                if np.max(mean) > 0.9:
+                    if np.random.choice([-1,1]) > 0:
+                        mean -= LANDSCAPE_INCREMENT
+                elif np.min(mean) < -0.9:
+                    if np.random.choice([-1,1]) > 0:
+                        mean += LANDSCAPE_INCREMENT
+                else:
+                    mean +=  np.random.choice([-1,1]) 
 
             # *Small IT
             else:
@@ -480,13 +531,15 @@ for it in range(itern):
 
         u.Fitmap.mean=mean
         u.landscape_shift()
-        print(u.Fitmap.mean)
 
     u.tick()
 
-if outdir:
-    lsc  = np.reshape(lsc, (-1,4))
 
+
+if outdir:
+
+
+    lsc  = np.reshape(lsc, (-1,4))
     data = pd.DataFrame({
           "fit"     : fit,
           "mean0"   : lsc[:,0],
@@ -495,9 +548,16 @@ if outdir:
           "mean3"   : lsc[:,3],
     })
 
+
+    
     [count,fit]=[*map(lambda x: np.around(x,5), [count,fit])]
 
     data.to_parquet(os.path.join(outdir,'fitness_data',f'data{instance}.parquet'))
     with open(os.path.join(outdir,'end_phenotypes', f'gpmaps_{instance}.json'), 'w') as outfile:
         json.dump(u.aggregate_gpmaps(),outfile)
+
+    u.dump_state(outdir)
+
+
+
 

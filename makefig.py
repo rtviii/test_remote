@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 exp_number = sys.argv[1]
 folder     = sys.argv[2]
+save_show = str(sys.argv[3])
 
 mean0all  =  0
 mean1all  =  0
@@ -58,6 +59,10 @@ figure.set_size_inches(20,8)
 plt.suptitle(f"Experiment {exp_number}")
 figure.text(0.5, 0.04, f'BD Process Iteration(every {1000} iterations)', ha='center', va='center')
 
-# plt.show()
 
-plt.savefig("Experiment {exp_number} ")
+
+if save_show == "+":
+    plt.show()
+if save_show == "_":
+    plt.savefig(f"gpmut8_{exp_number}.png")
+
