@@ -245,7 +245,6 @@ class Universe:
     def aggregate_gpmaps(self)->dict:
 
         _ = {}
-
         for ph in self.phenotypeHM:
             for index, ind in enumerate(self.phenotypeHM[ph]['individuals']):
                 key = xxhash.xxh64(str(ind.gpmap.get_contributions())).hexdigest()
@@ -401,16 +400,23 @@ fit                =  []
 if SHIFTING_FITNESS_PEAK:
     lsc  =  np.array([], ndmin=2)
 
-if SHIFTING_FITNESS_PEAK == -1:
-    if LANDSCAPE_INCREMENT  <0.9:
-        initial_landscape= np.random.choice(np.arange(-1,1,0.1),4)
-    else: 
-        initial_landscape= np.random.choice([1,0,-1], 4)
-elif SHIFTING_FITNESS_PEAK == 1:
-    if LANDSCAPE_INCREMENT< 0.9:
-        initial_landscape= [ np.random.choice((np.arange(-1,1,0.1)))]*4
-    else:
-        initial_landscape= [ np.random.choice([1,0,-1]) ]*4 
+
+
+# *-----------------------------------------------------------------------------------
+
+# if SHIFTING_FITNESS_PEAK == -1:
+#     if LANDSCAPE_INCREMENT  <0.9:
+#         initial_landscape= np.random.choice(np.arange(-1,1,0.1),4)
+#     else: 
+#         initial_landscape= np.random.choice([1,0,-1], 4)
+# elif SHIFTING_FITNESS_PEAK == 1:
+#     if LANDSCAPE_INCREMENT< 0.9:
+#         initial_landscape= [ np.random.choice((np.arange(-1,1,0.1)))]*4
+#     else:
+#         initial_landscape= [ np.random.choice([1,0,-1]) ]*4 
+
+initial_landscape = [0,0,0,0]
+# *-----------------------------------------------------------------------------------
 
 initial_landscape = np.array(initial_landscape, dtype=np.float64)
 mean              = np.array(initial_landscape,dtype=np.float64)
@@ -503,8 +509,20 @@ for it in range(itern):
             # *Large IT
             if abs(LANDSCAPE_INCREMENT) > 0.9:
                 for i,x in enumerate(mean):
-                    coin  = np.random.choice([-1,1])
-                    mean[i] *= coin 
+                    if mean[i] > 0.9:
+                        if np.random.choice([1,-1]) >0:
+                            mean[i] -= LANDSCAPE_INCREMENT
+                        else:
+                            ...
+
+                    elif mean[i] < -0.9:
+                        if np.random.choice([1,-1]) >0:
+                            mean[i] += LANDSCAPE_INCREMENT
+                        else:
+                            ...
+                    else:
+                        mean[i]+=  np.random.choice([1,-1]) * LANDSCAPE_INCREMENT
+
 
             # *Small IT
             else:

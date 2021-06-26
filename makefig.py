@@ -64,5 +64,6 @@ figure.text(0.5, 0.04, f'BD Process Iteration(every {1000} iterations)', ha='cen
 if save_show == "+":
     plt.show()
 if save_show == "_":
-    plt.savefig(f"gpmut8_{exp_number}.png")
+    plt.savefig(f"{folder}_exp{exp_number}.png")
+    print(f"saved {folder}_exp{exp_number}.png")
 

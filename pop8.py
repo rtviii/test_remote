@@ -509,8 +509,20 @@ for it in range(itern):
             # *Large IT
             if abs(LANDSCAPE_INCREMENT) > 0.9:
                 for i,x in enumerate(mean):
-                    coin  = np.random.choice([-1,1])
-                    mean[i] *= coin 
+                    if mean[i] > 0.9:
+                        if np.random.choice([1,-1]) >0:
+                            mean[i] -= LANDSCAPE_INCREMENT
+                        else:
+                            ...
+
+                    elif mean[i] < -0.9:
+                        if np.random.choice([1,-1]) >0:
+                            mean[i] += LANDSCAPE_INCREMENT
+                        else:
+                            ...
+                    else:
+                        mean[i]+=  np.random.choice([1,-1]) * LANDSCAPE_INCREMENT
+
 
             # *Small IT
             else:
@@ -531,6 +543,7 @@ for it in range(itern):
 
         u.Fitmap.mean=mean
         u.landscape_shift()
+        print(mean)
 
     u.tick()
 
