@@ -26,22 +26,33 @@ def dir_path(string):
         except:
             raise PermissionError(string)
 
-parser = argparse.ArgumentParser(description='Simulation presets')
+parser = argparse.ArgumentParser(                                       description           =             'Simulation presets'                                                                                                  )
+parser .add_argument ('-save'     , '--outdir'              , type= dir_path ,                 help = """Specify the path to write the results of the simulation.""" )
+# parser .add_argument ("-it"       , "--itern"               , type= int      ,                 help = "The number of iterations"                                                                                            )
 
-parser.add_argument('-save'     , '--outdir'               , type=dir_path, help="""Specify the path to write the results of the simulation."""           )
-parser.add_argument("-it"       , "--itern"                , type=int      , help="The number of iterations"                                              )
-parser.add_argument("-ls"       , "--landscape_increment"  , type=float    , required=True, help="Simulation tag for the current instance."               )
-parser.add_argument("-sim"      , "--siminst"              , type=int      , help="Simulation tag for the current instance."                              )
-parser.add_argument("-SP"       , "--shifting_peak"        , type=int      , choices=[-1,1], help="Flag for whether the fitness landscape changes or not.")
-parser.add_argument('-t'        , '--type'                 , type=int      , required=True, help='Types involved in experiment'                           )
-parser.add_argument('-initn'    , '--initial_number'       , type=int      , help='Types involved in experiment'                                          )
-parser.add_argument('-gpm_rate' , '--gpmrate'      , type=float    , help=''                                          )
-parser.add_argument('-alm_rate'  , '--almrate' , type=float    , help='Types involved in experiment'                                          )
+parser .add_argument ("-itstart"  , "--iter_start"               , type= int      ,required=True,   help = "The number of iterations"                                                                                            )
+parser .add_argument ("-itend"    , "--iter_end"               , type= int      ,required=True,   help = "The number of iterations"                                                                                            )
 
-args           = parser.parse_args()
-itern          = int(args.itern if args.itern is not None else 0)
-instance       = int(args.siminst if args.siminst is not None else 0)
-outdir         = args.outdir if args.outdir is not None else 0
+parser .add_argument ("-ls"       , "--landscape_increment" , type= float    ,required=True,   help = "Simulation tag for the current instance."                                                                            )
+parser .add_argument ("-sim"      , "--siminst"             , type= int      ,                 help = "Simulation tag for the current instance."                                                                            )
+parser .add_argument ("-SP"       , "--shifting_peak"       , type= int      ,choices =[-1,1], help = "Flag for whether the fitness landscape changes or not."                                                              )
+parser .add_argument ('-t'        , '--type'                , type= int      ,required=True,   help = 'Types involved in experiment'                                                                                        )
+parser .add_argument ('-initn'    , '--initial_number'      , type= int      ,                 help = 'Starting number of individuals'                                                                                      )
+parser .add_argument ('-gpm_rate' , '--gpmrate'             , type= float    ,                 help = 'GP-map contribution change mutation rate'                                                                            )
+parser .add_argument ('-alm_rate' , '--almrate'             , type= float    ,                 help = 'Allelic mutation rate'                                                                                               )
+parser .add_argument ('-re'       , '--resurrect'           , type= dir_path ,                 help = 'Path to reinstate the population from.'                                                                              )
+
+args           =      parser           .parse_args()
+
+# itern          =      int       (args  .itern      if args.itern is not None else 0)
+itstart        =      int(args.iter_start)
+itend          =      int(args.iter_end)
+
+
+instance       =      int       (args  .siminst    if args.siminst is not None else 0)
+
+outdir         = args.outdir    if args.outdir     is not None else 0
+resurrect_path = args.resurrect if args.resurrect  is not None else 0
 
 INDTYPE               = args.type
 EXP                   = "exp{}".format(INDTYPE)
@@ -400,8 +411,6 @@ fit                =  []
 if SHIFTING_FITNESS_PEAK:
     lsc  =  np.array([], ndmin=2)
 
-
-
 # *-----------------------------------------------------------------------------------
 
 # if SHIFTING_FITNESS_PEAK == -1:
@@ -418,58 +427,60 @@ if SHIFTING_FITNESS_PEAK:
 initial_landscape = [0,0,0,0]
 # *-----------------------------------------------------------------------------------
 
-initial_landscape = np.array(initial_landscape, dtype=np.float64)
-mean              = np.array(initial_landscape,dtype=np.float64)
-ftm               = Fitmap( STD,AMPLITUDE, mean)
+def ressurect_population(
+    exp_number     : int,
+    instance_number: int,
+    # * root path the the experiment (with /terminal,/fitness_data, etc..)
+    inpath         : str)->[List[Individual], np.ndarray]: 
 
-init_population   = [ 
-    Individual(INDIVIDUAL_INITS[str(INDTYPE)]['alleles'],
-    GPMap(INDIVIDUAL_INITS[str(INDTYPE)]['coefficients'])) 
-    for x in range(POPN)
-    ]
+    pop_re:List[Individual] = []
+    try: 
+        dump_f = os.path.join(inpath,'terminal',f'individuals_{instance_number}.json')
+        with open(dump_f) as infile:
+            data = json.load(infile)
+        fitmean = np.array( data['fitness'] )
+        pop  = data['population']
+        for pheno in pop:
+            phenotype = pop[pheno]
+            for individual in phenotype:
+                record = phenotype[individual]
+                als    = np.array(record['alleles'])
+                coefs  = np.array( record['gpmap'] )
+                i      = Individual(als, GPMap(coefs))
+                pop_re.append(i)
 
-u = Universe(init_population,ftm)
+        return [ pop_re, fitmean ]
+    except:
+        print(f"""Failed to open this combination of parameters:  exp {exp_number}  instance {instance} inpath {inpath}
+        \n Exiting.""")
+        exit(1)
+
+if resurrect_path:
+    population, mean = ressurect_population(INDTYPE   , instance, resurrect_path)
+    fitmap:Fitmap= Fitmap(STD,AMPLITUDE, mean)
+    u                  = Universe            (population,fitmap                   )
+else:
+    initial_landscape = np.array(initial_landscape, dtype=np.float64)
+    mean              = np.array(initial_landscape,dtype=np.float64)
+    ftm               = Fitmap( STD,AMPLITUDE, mean)
+    init_population   = [ 
+        Individual(INDIVIDUAL_INITS[str(INDTYPE)]['alleles'],
+        GPMap(INDIVIDUAL_INITS[str(INDTYPE)]['coefficients'])) 
+        for x in range(POPN)
+        ]
+
+    u = Universe(init_population,ftm)
 
 
-# print(
-# f"""
-# MUTATION_RATE_ALLELE         = {MUTATION_RATE_ALLELE}
-# MUTATION_RATE_CONTRIB_CHANGE = {MUTATION_RATE_CONTRIB_CHANGE}
-# COUNTER_RESET                = {COUNTER_RESET}
-# STD                          = {STD}
-# AMPLITUDE                    = {AMPLITUDE}
-# LOG_EVERY                    = {LOG_EVERY}
-# DUMP_STATE_EVERY             = {DUMP_STATE_EVERY}
-# \n
-# \n 
 
-# ---------------------------------------------------
-
-# - experiment type                                   {EXP}
-# - Initialized population to #                       {POPN} 
-# - Initial fitness is                                {initial_landscape}
-# - Landscape increment                               {LANDSCAPE_INCREMENT}
-# - Shifting Fitness Peak                             {SHIFTING_FITNESS_PEAK}
-
-# ---------------------------------------------------
-# \n
-# \n 
-# """)
-
-
-for it in range(itern):
-
-    if it > itern-(math.ceil(itern/3)) and not(it%(DUMP_STATE_EVERY)):
+for it in range(itstart, itend):
+    if it > itend-(math.ceil((itend-itstart)/3)) and not(it%(DUMP_STATE_EVERY)):
         u.write_var_covar(it)
-
     if not it % LOG_EVERY:
         fit.append(u.get_avg_fitness())
         if SHIFTING_FITNESS_PEAK!=0:
             lsc = np.append(lsc, mean)
-
-
     if ((not it%COUNTER_RESET) and SHIFTING_FITNESS_PEAK!=0):        
-
         #? Corellated shifts
         if SHIFTING_FITNESS_PEAK == 1:
 
@@ -501,11 +512,10 @@ for it in range(itern):
                     else:
                         ...
                 else: 
-                   mean += np.random.choice([1,-1])*LANDSCAPE_INCREMENT
+                    mean += np.random.choice([1,-1])*LANDSCAPE_INCREMENT
                 
         #? Uncorellated shifts
         elif SHIFTING_FITNESS_PEAK == -1:
-
             # *Large IT
             if abs(LANDSCAPE_INCREMENT) > 0.9:
                 for i,x in enumerate(mean):
@@ -543,21 +553,18 @@ for it in range(itern):
 
         u.Fitmap.mean=mean
         u.landscape_shift()
-
     u.tick()
-
 
 
 if outdir:
 
-
     lsc  = np.reshape(lsc, (-1,4))
     data = pd.DataFrame({
-          "fit"     : fit,
-          "mean0"   : lsc[:,0],
-          "mean1"   : lsc[:,1],
-          "mean2"   : lsc[:,2],
-          "mean3"   : lsc[:,3],
+        "fit"     : fit,
+        "mean0"   : lsc[:,0],
+        "mean1"   : lsc[:,1],
+        "mean2"   : lsc[:,2],
+        "mean3"   : lsc[:,3],
     })
 
 

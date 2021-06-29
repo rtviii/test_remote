@@ -47,5 +47,5 @@ figure.text(0.5, 0.04, 'BD Process Iteration (1000 iterations)', ha='center', va
 # plt.show()
 
 
-plt.savefig(f"staticpop_gpmut_{exp_sym}_v_{exp_asym}.png", bbox_inches='tight')
+plt.savefig(f"gpmut_20mil_{exp_sym}_v_{exp_asym}.png", bbox_inches='tight')
 

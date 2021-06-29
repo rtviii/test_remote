@@ -11,10 +11,6 @@ import re
 from scipy.stats import ttest_ind
 
   
-
-folder="flat_pop8_20mil"
-
-
 colnames         = ['type #','U_corellated' , 'U_uncorellated' , 'p_val']
 variance_sheet   = pd.DataFrame([], columns=colnames)
 covariance_sheet = pd.DataFrame([], columns=colnames)
@@ -30,9 +26,8 @@ for exp_type in range(1,6):
     var_uncor = []
     cov_uncor = []
 
-    for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_type}/var_covar/*.json"):
-        dump_itern = re.findall(r'\d+', file)[-1]
-        if int(dump_itern) > int(17e6):
+    for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/staticpop_lite/exp{exp_type}/var_covar/*.json"):
+        if int( re.findall(r'\d+', file)[1] ) > int(7e6):
             with open (file ) as infile:
                 data = json.load(infile)
                 var  = data['variance']
@@ -41,9 +36,8 @@ for exp_type in range(1,6):
                 var_cor.append(var)
                 cov_cor.append(cov)
 
-    for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_type+5}/var_covar/*.json"):
-        dump_itern = re.findall(r'\d+', file)[-1]
-        if int(dump_itern) > int(17e6):
+    for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/staticpop_lite/exp{exp_type+5}/var_covar/*.json"):
+        if int( re.findall(r'\d+', file)[1] ) > int(7e6):
             with open (file ) as infile:
                 data = json.load(infile)
                 var  = data['variance']
@@ -145,5 +139,5 @@ for exp_type in range(1,6):
 
 
 
-variance_sheet.to_csv('VAR_flat_large_increment.csv')
-covariance_sheet.to_csv('COV_flat_large_increment.csv')
+variance_sheet.to_csv('VAR_large_increment.csv')
+covariance_sheet.to_csv('COV_large_increment.csv')

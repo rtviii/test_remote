@@ -10,7 +10,7 @@ from scipy.stats import ttest_ind
 
 # exp_sym  = sys.argv[1]
 # TYPE     = exp_sym
-folder   = "flat_pop8_20mil"
+folder   = "staticpop_lite"
 # exp_asym = sys.argv[2]
 
 
@@ -27,15 +27,19 @@ uncorrelated_exps = []
 pvalues           = []
 
 
-for exp_type in range(1,6):
+for exp_type in range(11,14):
 
     fitness_sym  = []
     fitness_asym = []
+
+    print("on Experiment ", exp_type)
+
 
     for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_type}/fitness_data/*.parquet"):
         data      = pd.read_parquet(file)
         lastthird = data['fit'][   int( len(data['fit']) - len(data['fit'])/3 ):]
         fit_sym_u = np.mean(lastthird)
+
         fitness_sym.append(fit_sym_u)
 
     for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_type+5}/fitness_data/*.parquet"):
@@ -53,10 +57,11 @@ for exp_type in range(1,6):
 
 print(correlated_exps)
 print(uncorrelated_exps)
+# print(cwpuncorrelated_exps)
 
 df = pd.DataFrame({'correlated':correlated_exps,'uncorrelated':uncorrelated_exps,'p-val':pvalues})
 print(df)
-df.to_csv("FITNESS_flat_large_increment.csv")
+df.to_csv("FITNESS_small_increment.csv")
 
 
 
