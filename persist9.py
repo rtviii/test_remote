@@ -26,31 +26,25 @@ def dir_path(string):
         except:
             raise PermissionError(string)
 
-parser = argparse.ArgumentParser(                                       description           =             'Simulation presets'                                                                                                  )
-parser .add_argument ('-save'     , '--outdir'              , type= dir_path ,                 help = """Specify the path to write the results of the simulation.""" )
+parser = argparse.ArgumentParser (                             description        = 'Simulation presets'                                                             )
+parser           .add_argument   ('-save' , '--outdir' , type= dir_path    , help = ""                  "Specify the path to write the results of the simulation.""" )
 # parser .add_argument ("-it"       , "--itern"               , type= int      ,                 help = "The number of iterations"                                                                                            )
-
-parser .add_argument ("-itstart"  , "--iter_start"               , type= int      ,required=True,   help = "The number of iterations"                                                                                            )
-parser .add_argument ("-itend"    , "--iter_end"               , type= int      ,required=True,   help = "The number of iterations"                                                                                            )
-
-parser .add_argument ("-ls"       , "--landscape_increment" , type= float    ,required=True,   help = "Simulation tag for the current instance."                                                                            )
-parser .add_argument ("-sim"      , "--siminst"             , type= int      ,                 help = "Simulation tag for the current instance."                                                                            )
-parser .add_argument ("-SP"       , "--shifting_peak"       , type= int      ,choices =[-1,1], help = "Flag for whether the fitness landscape changes or not."                                                              )
-parser .add_argument ('-t'        , '--type'                , type= int      ,required=True,   help = 'Types involved in experiment'                                                                                        )
-parser .add_argument ('-initn'    , '--initial_number'      , type= int      ,                 help = 'Starting number of individuals'                                                                                      )
-parser .add_argument ('-gpm_rate' , '--gpmrate'             , type= float    ,                 help = 'GP-map contribution change mutation rate'                                                                            )
-parser .add_argument ('-alm_rate' , '--almrate'             , type= float    ,                 help = 'Allelic mutation rate'                                                                                               )
-parser .add_argument ('-re'       , '--resurrect'           , type= dir_path ,                 help = 'Path to reinstate the population from.'                                                                              )
+parser .add_argument ("-itstart"  , "--iter_start"          , type= int      ,required=True,   help = "The number of iterations"                               )
+parser .add_argument ("-itend"    , "--iter_end"            , type= int      ,required=True,   help = "The number of iterations"                               )
+parser .add_argument ("-ls"       , "--landscape_increment" , type= float    ,required=True,   help = "Simulation tag for the current instance."               )
+parser .add_argument ("-sim"      , "--siminst"             , type= int      ,                 help = "Simulation tag for the current instance."               )
+parser .add_argument ("-SP"       , "--shifting_peak"       , type= int      ,choices =[-1,1], help = "Flag for whether the fitness landscape changes or not." )
+parser .add_argument ('-t'        , '--type'                , type= int      ,required=True,   help = 'Types involved in experiment'                           )
+parser .add_argument ('-initn'    , '--initial_number'      , type= int      ,                 help = 'Starting number of individuals'                         )
+parser .add_argument ('-gpm_rate' , '--gpmrate'             , type= float    ,                 help = 'GP-map contribution change mutation rate'               )
+parser .add_argument ('-alm_rate' , '--almrate'             , type= float    ,                 help = 'Allelic mutation rate'                                  )
+parser .add_argument ('-re'       , '--resurrect'           , type= dir_path ,                 help = 'Path to reinstate the population from.'                 )
 
 args           =      parser           .parse_args()
-
 # itern          =      int       (args  .itern      if args.itern is not None else 0)
 itstart        =      int(args.iter_start)
 itend          =      int(args.iter_end)
-
-
 instance       =      int       (args  .siminst    if args.siminst is not None else 0)
-
 outdir         = args.outdir    if args.outdir     is not None else 0
 resurrect_path = args.resurrect if args.resurrect  is not None else 0
 
@@ -68,7 +62,7 @@ COUNTER_RESET                = 500000
 STD                          = 1
 AMPLITUDE                    = 1
 LOG_EVERY                    = int(1e3)
-DUMP_STATE_EVERY             = 10000
+DUMP_STATE_EVERY             = int(1e3)
 
 INDIVIDUAL_INITS     =  {   
    "1":{
@@ -173,20 +167,120 @@ INDIVIDUAL_INITS     =  {
                         [1,1,1,1],
                     ], dtype=np.float64) * np.array([-1,-1,1,1])
    },
+   "11":{
+        'trait_n' :4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,0,0,0],
+                        [0,1,0,0],
+                        [0,0,1,0],
+                        [0,0,0,1],
+                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+   },
+   "12":{
+        'trait_n' :4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [-1,1,0,0],
+                        [1,-1,0,0],
+                        [0,0,-1,1],
+                        [0,0,1,-1],
+                    ], dtype=np.float64) 
+   },
+   "13":{
+        'trait_n' :4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,1,0,0],
+                        [1,-1,0,0],
+                        [0,0,1,1],
+                        [0,0,1,-1],
+                    ], dtype=np.float64) * np.array([1,1,1,1])
+   },
+   "14":{
+
+        'trait_n'       :  4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,-1,1,-1],
+                        [-1,1,-1,1],
+                        [1,-1,1,-1],
+                        [-1,1,-1,1],
+                    ], dtype=np.float64)
+   },
+   "15":{
+        'trait_n'       :  4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+   },
+   "16":{
+        'trait_n' :4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,0,0,0],
+                        [0,1,0,0],
+                        [0,0,1,0],
+                        [0,0,0,1],
+                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+   },
+   "17":{
+        'trait_n' :4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [-1,1,0,0],
+                        [1,-1,0,0],
+                        [0,0,-1,1],
+                        [0,0,1,-1],
+                    ], dtype=np.float64) 
+   },
+   "18":{
+        'trait_n' :4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,1,0,0],
+                        [1,-1,0,0],
+                        [0,0,1,1],
+                        [0,0,1,-1],
+                    ], dtype=np.float64) * np.array([1,1,1,1])
+   },
+   "19":{
+
+        'trait_n'       :  4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,-1,1,-1],
+                        [-1,1,-1,1],
+                        [1,-1,1,-1],
+                        [-1,1,-1,1],
+                    ], dtype=np.float64)
+   },
+   "20":{
+        'trait_n'       :  4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+   },
 }
 
 [ os.makedirs(os.path.join(outdir, intern_path), exist_ok=True) for intern_path in ['var_covar','end_phenotypes','fitness_data', 'terminal']]
 
 class Fitmap():
     def __init__(self,std:float, amplitude:float, mean:np.ndarray)->None: 
-
         self.std                                       : float = std
         self.amplitude                                 : float = amplitude
         self.mean:np.ndarray = mean
 
     def getMap(self):
         # * Returns a Callable[...] but leaving the annotation out.
-
         def _(phenotype:np.ndarray):
             return             self.amplitude * math.exp(
                 -(np.sum(((phenotype - self.mean)**2)
@@ -373,7 +467,7 @@ class Universe:
         indout   = os.path.join(terminalpath, f'individuals_{instance}.json')
         indn     = 1
         ind_dump = {
-            'fitness'   : self.Fitmap.mean.tolist(),
+            'fitness'  : self.Fitmap.mean.tolist(),
             'population': {}
         }
         for phen in self.phenotypeHM:
@@ -391,7 +485,7 @@ class Universe:
             json.dump(ind_dump,out,sort_keys=True, indent=4)
 
     def write_var_covar(self, itern:int)->None:
-
+        os.makedirs(os.path.join(outdir,'var_covar',f'inst{instance}'), exist_ok=True)
         fitness = self.get_avg_fitness()
         var, covar  = tuple(map( lambda _: np.around(_,5).tolist(),self.get_variance()))
 
@@ -400,8 +494,7 @@ class Universe:
             "covariance"  : covar,
             "mean_fitness": fitness
         }
-
-        with open(os.path.join(outdir,'var_covar', f'var_covar__itern{itern}.json'), 'w') as outfile:
+        with open(os.path.join(outdir, 'var_covar', f'inst{instance}', f'var_covar__itern{itern}.json'), 'w') as outfile:
             json.dump(state,outfile,sort_keys=True, indent=4)
 
 count              =  []
@@ -411,7 +504,6 @@ fit                =  []
 if SHIFTING_FITNESS_PEAK:
     lsc  =  np.array([], ndmin=2)
 
-# *-----------------------------------------------------------------------------------
 
 # if SHIFTING_FITNESS_PEAK == -1:
 #     if LANDSCAPE_INCREMENT  <0.9:
@@ -425,7 +517,6 @@ if SHIFTING_FITNESS_PEAK:
 #         initial_landscape= [ np.random.choice([1,0,-1]) ]*4 
 
 initial_landscape = [0,0,0,0]
-# *-----------------------------------------------------------------------------------
 
 def ressurect_population(
     exp_number     : int,
@@ -459,6 +550,7 @@ if resurrect_path:
     population, mean = ressurect_population(INDTYPE   , instance, resurrect_path)
     fitmap:Fitmap= Fitmap(STD,AMPLITUDE, mean)
     u                  = Universe            (population,fitmap                   )
+    
 else:
     initial_landscape = np.array(initial_landscape, dtype=np.float64)
     mean              = np.array(initial_landscape,dtype=np.float64)
@@ -474,7 +566,7 @@ else:
 
 
 for it in range(itstart, itend):
-    if it > itend-(math.ceil((itend-itstart)/3)) and not(it%(DUMP_STATE_EVERY)):
+    if it > itend-(math.ceil((itend-itstart)/10)) and not(it%(DUMP_STATE_EVERY)):
         u.write_var_covar(it)
     if not it % LOG_EVERY:
         fit.append(u.get_avg_fitness())

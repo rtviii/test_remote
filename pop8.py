@@ -332,20 +332,16 @@ class Universe:
            for index,trait in enumerate( phen['phenotype'] ):
                for x in range(phen['n']):
                    traits[index] = np.append(traits[index],trait)
-
         var = np.zeros(( 4 ))
         for _ in range(0,4):
             var[_] = np.var(traits[_])
-         
         _traitsfull= np.array([
             traits[0],
             traits[1],
             traits[2],
             traits[3],
         ])
-
         cov = np.cov(_traitsfull, bias=True)
-
         return (var, cov)
 
     def get_fitness(self,ind:Individual) -> float:
