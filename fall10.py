@@ -41,15 +41,13 @@ parser .add_argument ('-alm_rate' , '--almrate'                 , type  = float 
 parser .add_argument ('-re'       , '--resurrect'               , type  = dir_path   ,                 help = 'Path to reinstate the population from.'                                                     )
 parser .add_argument ('-logvar'   , '--log_variance_covariance' , action='store_true',                 help = 'Whether to collect variance and covariance values for the last tenth of the replicate run.' )
 
-args           =      parser           .parse_args()
-itstart        =      int(args.iter_start)
-itend          =      int(args.iter_end)
-instance       =      int       (args  .siminst    if args.siminst is not None else 0)
-outdir         = args.outdir    if args.outdir     is not None else 0
-resurrect_path = args.resurrect if args.resurrect  is not None else 0
-
-LOG_VAR_COVAR_ON = bool( args.log_variance_covariance )
-
+args                         = parser           .parse_args()
+ITSTART                      = int(args.iter_start)
+ITEND                        = int(args.iter_end)
+INSTANCE_N                   = int       (args  .siminst    if args.siminst is not None else 0)
+OUTDIR                       = args.outdir    if args.outdir     is not None else 0
+RESSURECT_PATH               = args.resurrect if args.resurrect  is not None else 0
+LOG_VAR_COVAR_ON             = bool( args.log_variance_covariance )
 INDTYPE                      = args.type
 EXP                          = "exp{}".format(INDTYPE)
 POPN                         = args.initial_number if args.initial_number is not None else 1000
@@ -65,8 +63,14 @@ AMPLITUDE                    = 1
 LOG_FIT_EVERY                = int(1e3)
 LOG_VAR_EVERY                = int(1e3)
 
+def print_receipt(self)->None:
+    receipt = {
 
+    }
+
+#? Create a parameter log file to write out.
 INDIVIDUAL_INITS     =  {   
+#    mendelian
    "1":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
@@ -75,18 +79,20 @@ INDIVIDUAL_INITS     =  {
                         [0,1,0,0],
                         [0,0,1,0],
                         [0,0,0,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+                    ])
    },
+#    modularpositive
    "2":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [-1,1,0,0],
-                        [1,-1,0,0],
-                        [0,0,-1,1],
-                        [0,0,1,-1],
+                        [1,1,0,0],
+                        [1,1,0,0],
+                        [0,0,1,1],
+                        [0,0,1,1],
                     ], dtype=np.float64) 
    },
+#    modularskipping
    "3":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
@@ -94,186 +100,155 @@ INDIVIDUAL_INITS     =  {
                         [1,1,0,0],
                         [1,-1,0,0],
                         [0,0,1,1],
-                        [0,0,1,-1],
-                    ], dtype=np.float64) * np.array([1,1,1,1])
+                        [0,0,1,-1]])
    },
+#    spiderweb
    "4":{
 
         'trait_n'       :  4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
                     ], dtype=np.float64)
    },
+#    mendelian
    "5":{
-        'trait_n'       :  4,
+        'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+                        [1,0,0,0],
+                        [0,1,0,0],
+                        [0,0,1,0],
+                        [0,0,0,1],
+                    ])
    },
+#    modularpositive
    "6":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,0,0,0],
-                        [0,1,0,0],
-                        [0,0,1,0],
-                        [0,0,0,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+                        [1,1,0,0],
+                        [1,1,0,0],
+                        [0,0,1,1],
+                        [0,0,1,1],
+                    ], dtype=np.float64) 
    },
+#    modularskipping
    "7":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [-1,1,0,0],
-                        [1,-1,0,0],
-                        [0,0,-1,1],
-                        [0,0,1,-1],
-                    ], dtype=np.float64) 
-   },
-   "8":{
-        'trait_n' :4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
-        'coefficients'  :  np.array([
                         [1,1,0,0],
                         [1,-1,0,0],
                         [0,0,1,1],
-                        [0,0,1,-1],
-                    ], dtype=np.float64) * np.array([1,1,1,1])
+                        [0,0,1,-1]])
    },
-   "9":{
+#    spiderweb
+   "8":{
 
         'trait_n'       :  4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
                     ], dtype=np.float64)
    },
-   "10":{
-        'trait_n'       :  4,
+#    mendelian
+   "9":{
+        'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+                        [1,0,0,0],
+                        [0,1,0,0],
+                        [0,0,1,0],
+                        [0,0,0,1],
+                    ])
    },
+#    modularpositive
+   "10":{
+        'trait_n' :4,
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'coefficients'  :  np.array([
+                        [1,1,0,0],
+                        [1,1,0,0],
+                        [0,0,1,1],
+                        [0,0,1,1],
+                    ], dtype=np.float64) 
+   },
+#    modularskipping
    "11":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,0,0,0],
-                        [0,1,0,0],
-                        [0,0,1,0],
-                        [0,0,0,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+                        [1,1,0,0],
+                        [1,-1,0,0],
+                        [0,0,1,1],
+                        [0,0,1,-1]])
    },
+#    spiderweb
    "12":{
-        'trait_n' :4,
+
+        'trait_n'       :  4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [-1,1,0,0],
-                        [1,-1,0,0],
-                        [0,0,-1,1],
-                        [0,0,1,-1],
-                    ], dtype=np.float64) 
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                    ], dtype=np.float64)
    },
+#    mendelian
    "13":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,1,0,0],
-                        [1,-1,0,0],
-                        [0,0,1,1],
-                        [0,0,1,-1],
-                    ], dtype=np.float64) * np.array([1,1,1,1])
-   },
-   "14":{
-
-        'trait_n'       :  4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
-        'coefficients'  :  np.array([
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
-                    ], dtype=np.float64)
-   },
-   "15":{
-        'trait_n'       :  4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
-        'coefficients'  :  np.array([
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
-   },
-   "16":{
-        'trait_n' :4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
-        'coefficients'  :  np.array([
                         [1,0,0,0],
                         [0,1,0,0],
                         [0,0,1,0],
                         [0,0,0,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
+                    ])
    },
-   "17":{
+#    modularpositive
+   "14":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [-1,1,0,0],
-                        [1,-1,0,0],
-                        [0,0,-1,1],
-                        [0,0,1,-1],
+                        [1,1,0,0],
+                        [1,1,0,0],
+                        [0,0,1,1],
+                        [0,0,1,1],
                     ], dtype=np.float64) 
    },
-   "18":{
+#    modularskipping
+   "15":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
                         [1,1,0,0],
                         [1,-1,0,0],
                         [0,0,1,1],
-                        [0,0,1,-1],
-                    ], dtype=np.float64) * np.array([1,1,1,1])
+                        [0,0,1,-1]])
    },
-   "19":{
+#    spiderweb
+   "16":{
 
         'trait_n'       :  4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
         'coefficients'  :  np.array([
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
-                        [1,-1,1,-1],
-                        [-1,1,-1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
+                        [1,1,1,1],
                     ], dtype=np.float64)
-   },
-   "20":{
-        'trait_n'       :  4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
-        'coefficients'  :  np.array([
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                        [1,1,1,1],
-                    ], dtype=np.float64) * np.array([-1,-1,1,1])
    },
 }
 
-[ os.makedirs(os.path.join(outdir, intern_path), exist_ok=True) for intern_path in ['var_covar','end_phenotypes','fitness_data', 'terminal']]
+[ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','end_phenotypes','fitness_data', 'terminal']]
 
 class Fitmap():
     def __init__(self,std:float, amplitude:float, mean:np.ndarray)->None: 
@@ -285,9 +260,7 @@ class Fitmap():
         # * Returns a Callable[...] but leaving the annotation out.
         def _(phenotype:np.ndarray):
             return             self.amplitude * math.exp(
-                -(
-                    np.sum(((phenotype - self.mean)**2)                /                 (2*self.std**2))
-                )
+                -(np.sum(((phenotype - self.mean)**2)/(2*self.std**2)))
                 )
         return _
 
@@ -476,7 +449,7 @@ class Universe:
 
         terminalpath = os.path.join(output_directory,'terminal')
 
-        indout   = os.path.join(terminalpath, f'individuals_{instance}.json')
+        indout   = os.path.join(terminalpath, f'individuals_{INSTANCE_N}.json')
         indn     = 1
         ind_dump = {
             'fitness'  : self.Fitmap.mean.tolist(),
@@ -507,7 +480,7 @@ class Universe:
             self.var_covar_agg['began_loggin_at']                       = itern
 
     def write_mean_var_covar(self,outdir:str) ->None:
-        outfile    = os.path.join(outdir,'var_covar',f'mean_var_covar_{instance}.json')
+        outfile    = os.path.join(outdir,'var_covar',f'mean_var_covar_{INSTANCE_N}.json')
         _ = {
             'var'            : self.var_covar_agg['var'    ].tolist(),
             'covar'          : self.var_covar_agg['covar'  ].tolist(),
@@ -517,8 +490,6 @@ class Universe:
         }
         with open(outfile,'w') as log:
             json.dump(_, log)
-
-
 
 def ressurect_population(
     exp_number     : int,
@@ -544,13 +515,11 @@ def ressurect_population(
 
         return [ pop_re, fitmean ]
     except:
-        print(f"""Failed to open this combination of parameters when resurrecting a population:  exp {exp_number}  instance {instance} inpath {inpath}.\n Exiting.""")
+        print(f"""Failed to open this combination of parameters when resurrecting a population:  exp {exp_number}  instance {INSTANCE_N} inpath {inpath}.\n Exiting.""")
         exit(1)
-
 
 count              =  []
 fit                =  []
-
 
 if SHIFTING_FITNESS_PEAK:
     lsc  =  np.array([], ndmin=2)
@@ -558,8 +527,8 @@ if SHIFTING_FITNESS_PEAK:
 initial_landscape = [0,0,0,0]
 
 
-if resurrect_path:
-    population, mean = ressurect_population(INDTYPE   , instance, resurrect_path)
+if RESSURECT_PATH:
+    population, mean = ressurect_population(INDTYPE   , INSTANCE_N, RESSURECT_PATH)
     fitmap:Fitmap= Fitmap(STD,AMPLITUDE, mean)
     u                  = Universe            (population,fitmap                   )
     
@@ -572,13 +541,11 @@ else:
         GPMap(INDIVIDUAL_INITS[str(INDTYPE)]['coefficients'])) 
         for x in range(POPN)
         ]
-
     u = Universe(init_population,ftm)
 
 
-
-for it in range(itstart, itend+1):
-    if it > itend-(math.ceil((itend-itstart)/10)) and not(it%(LOG_VAR_EVERY)):
+for it in range(ITSTART, ITEND+1):
+    if it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(it%(LOG_VAR_EVERY)):
         u.log_var_covar(it)
 
     if not it % LOG_FIT_EVERY:
@@ -657,7 +624,7 @@ for it in range(itstart, itend+1):
     u.tick()
 
 
-if outdir:
+if OUTDIR:
 
     lsc  = np.reshape(lsc, (-1,4))
     data = pd.DataFrame({
@@ -672,12 +639,12 @@ if outdir:
     
     [count,fit]=[*map(lambda x: np.around(x,5), [count,fit])]
 
-    data.to_parquet(os.path.join(outdir,'fitness_data',f'data{instance}.parquet'))
-    with open(os.path.join(outdir,'end_phenotypes', f'gpmaps_{instance}.json'), 'w') as outfile:
+    data.to_parquet(os.path.join(OUTDIR,'fitness_data',f'data{INSTANCE_N}.parquet'))
+    with open(os.path.join(OUTDIR,'end_phenotypes', f'gpmaps_{INSTANCE_N}.json'), 'w') as outfile:
         json.dump(u.aggregate_gpmaps(),outfile)
 
-    u.write_mean_var_covar(outdir)
-    u.dump_state(outdir)
+    u.write_mean_var_covar(OUTDIR)
+    u.dump_state(OUTDIR)
 
 
 
