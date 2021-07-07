@@ -7,27 +7,32 @@ import matplotlib.pyplot as plt
 
 exp_number = sys.argv[1]
 folder     = sys.argv[2]
-save_show = str(sys.argv[3])
+save_show  = str(sys.argv[3])
 
-mean0all  =  0
-mean1all  =  0
-mean2all  =  0
-mean3all  =  0
+mean0all   = 0
+mean1all   = 0
+mean2all   = 0
+mean3all   = 0
 
-fitall    =  0
+fitall     = 0
+brateall   = 0
+countall   = 0
 
-c = 0
+c          = 0
 
 # for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_number}/fitness_data/*.parquet"):
 
 for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/fitness_data/*.parquet"):
 
     data       =   pd.read_parquet(file)
+
     mean0all   +=  np.array( data['mean0'])
     mean1all   +=  np.array( data['mean1'])
     mean2all   +=  np.array( data['mean2'])
     mean3all   +=  np.array( data['mean3'])
+
     fitall     +=  np.array( data['fit'])
+
     c+=1
 
 mean0all  =  mean0all/c
@@ -35,6 +40,8 @@ mean1all  =  mean1all/c
 mean2all  =  mean2all/c
 mean3all  =  mean3all/c
 fitall    =  fitall  /c
+brateall  =  brateall/c
+countall  =  countall/c
 
 time          =  np.arange(len(fitall))
 figur, axarr  =  plt.subplots(2,2)

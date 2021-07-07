@@ -20,12 +20,9 @@ folder   = "staticpop_lite"
 #? 100 x the mean of the last third uncorrelated  -|
 
 
-
-
 correlated_exps   = []
 uncorrelated_exps = []
 pvalues           = []
-
 
 for exp_type in range(11,14):
 
@@ -39,7 +36,6 @@ for exp_type in range(11,14):
         data      = pd.read_parquet(file)
         lastthird = data['fit'][   int( len(data['fit']) - len(data['fit'])/3 ):]
         fit_sym_u = np.mean(lastthird)
-
         fitness_sym.append(fit_sym_u)
 
     for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_type+5}/fitness_data/*.parquet"):

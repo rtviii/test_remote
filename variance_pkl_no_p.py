@@ -16,43 +16,22 @@ from scipy.stats import ttest_ind
 
 abs_root = sys.argv[1]
 exp_type = int( sys.argv[2] )
-def get_variance_replicate(
-    abs_root  : str,
-    exp_n     : int,
-    instance_n: int)-> List[np.ndarray]: 
 
-    variances          = []
-    covariances        = []
-    replicate_datapath = os.path.join(abs_root,f"exp{exp_n}", "var_covar",f"inst{ instance_n }")
+def get_variance_replicate(rep_path:str)-> List[np.ndarray]: 
+	with open(rep_path, 'rb') as infile:
+		data  = json.load(infile)
 
-    for file in glob.glob(f"{replicate_datapath}/*.json"):
-        print("Found file", file)
-        with open (file ) as infile:
+	mean_var   = np.array(data['var'])/data['elapsed']
+	mean_covar = np.array(data['covar'])/data['elapsed']
+	return [mean_var,mean_covar]
 
-            data = json.load(infile)
-            var  = data['variance']
-            cov  = data['covariance']
-
-            variances.append(var)
-            covariances.append(cov)
-
-    mean_var = np.mean(variances, axis=0)
-    mean_cov = np.mean(covariances, axis=0)
-    return [mean_var,mean_cov]
-
-v,c = get_variance_replicate("/home/rxz/dev/polygenicity-simulations/trial",1,2)
-
-
-# for exp_type in range(1,6):
-
-# for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_type}/var_covar/*.json"):
+v,c = get_variance_replicate("/home/rxz/dev/polygenicity-simulations/fall/exp14/var_covar/mean_var_covar_0.json")
 
 def experiment(number):
 
     colnames         = ['type #','U_corellated' , 'U_uncorellated' , 'p_val']
     variance_sheet   = pd.DataFrame([], columns=colnames)
     covariance_sheet = pd.DataFrame([], columns=colnames)
-
 
     pvals_var   = []
     pvals_covar = []
@@ -66,7 +45,7 @@ def experiment(number):
     for instance_folder in os.listdir(os.path.join(abs_root, f"exp{exp_type}",'var_covar')):
 
         replicate_number = re.findall(r'\d+', instance_folder)[-1]
-        instvar, instcovar = get_variance_replicate(abs_root,exp_type,replicate_number)
+        instvar, instcovar = get_variance_replicate(os.path.join(instance_folder,f"mean_var_covar_{replicate_number}.json"))
 
         var_cor.append(instvar)
         cov_cor.append(instcovar)
@@ -74,7 +53,7 @@ def experiment(number):
     for instance_folder in os.listdir(os.path.join(abs_root, f"exp{exp_type+5}",'var_covar')):
 
         replicate_number = re.findall(r'\d+', instance_folder)[-1]
-        instvar, instcovar = get_variance_replicate(abs_root,exp_type,replicate_number)
+        instvar, instcovar = get_variance_replicate(os.path.join(instance_folder,f"mean_var_covar_{replicate_number}.json"))
 
         var_uncor.append(instvar)
         cov_uncor.append(instcovar)
@@ -150,20 +129,3 @@ def experiment(number):
     mcut1t3 = mean_covariances_uncorrelated[0,2]
     mcut1t4 = mean_covariances_uncorrelated[0,3]
     mcut2t3 = mean_covariances_uncorrelated[1,2]
-    mcut2t4 = mean_covariances_uncorrelated[1,3]
-    mcut3t4 = mean_covariances_uncorrelated[2,3]
-
-    mean_covs_U =[ 
-    mcut1t2,
-    mcut1t3,
-    mcut1t4,
-    mcut2t3,
-    mcut2t4,
-    mcut3t4
-    ]
-
-    covariance_sheet = covariance_sheet.append(pd.DataFrame([ [exp_type, str(np.around(mean_covs_C,5)), str(np.around(mean_covs_U,5)) ,str(np.around(pvals_covar,5))] ],columns=colnames))
-
-
-# variance_sheet.to_csv('VAR_flat_large_increment.csv')
-# covariance_sheet.to_csv('COV_flat_large_increment.csv')
