@@ -25,8 +25,6 @@ c = 0
 
 for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/fitness_data/*.csv"):
 
-	print("Got pickle file ", file)
-
 	data = []
 	with open(file, 'rb') as  infile:
 		data       =   pickle.load(infile)

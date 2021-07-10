@@ -54,7 +54,7 @@ SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LANDSCAPE_INCREMENT          = float(args.landscape_increment)
 MUTATION_RATE_ALLELE         = 0.0004 if args.almrate is None else float(args.almrate  )
 MUTATION_RATE_CONTRIB_CHANGE = 0.001 if args.gpmrate is None else float( args.gpmrate )
-MUTATION_VARIANTS_ALLELE     = np.arange(-1,1.1,0.1)
+MUTATION_VARIANTS_ALLELE     = np.arange(-1,1,0.1)
 DEGREE                       = 1
 COUNTER_RESET                = 10000
 STD                          = 1
@@ -95,6 +95,7 @@ def print_receipt()->None:
 
 #? Create a parameter log file to write out.
 INDIVIDUAL_INITS     =  {   
+
 #    mendelian
    "1":{
         'trait_n' :4,
@@ -154,8 +155,7 @@ class Fitmap():
             return             self.amplitude * math.exp(
                 -(np.sum(
                     ((phenotype - self.mean)**2)
-                    /
-                    (2*self.std**2)
+                    /(2*self.std**2)
                     )
 
                 )
@@ -311,6 +311,7 @@ class Universe:
         }
 
         for phen in self.phenotypeHM.values():
+
             for index,trait in enumerate( phen['phenotype'] ):
                 for x in range(phen['n']):
                     traits[index] = np.append(traits[index],trait)

@@ -1,3 +1,4 @@
+from pprint import pprint
 import timeit
 from datetime import datetime
 from functools import reduce 
@@ -25,20 +26,20 @@ def dir_path(string):
         except:
             raise PermissionError(string)
 
-parser = argparse.ArgumentParser (                             description        = 'Simulation presets'                                                             )
-parser           .add_argument   ('-save' , '--outdir' , type= dir_path    , help = ""                  "Specify the path to write the results of the simulation.""" )
 # parser .add_argument ("-it"       , "--itern"               , type= int      ,                 help = "The number of iterations"                                                                                            )
-parser .add_argument ("-itstart"  , "--iter_start"              , type  = int        ,required=True,   help = "The number of iterations"                                                                   )
-parser .add_argument ("-itend"    , "--iter_end"                , type  = int        ,required=True,   help = "The number of iterations"                                                                   )
-parser .add_argument ("-ls"       , "--landscape_increment"     , type  = float      ,required=True,   help = "Simulation tag for the current instance."                                                   )
-parser .add_argument ("-sim"      , "--siminst"                 , type  = int        ,                 help = "Simulation tag for the current instance."                                                   )
-parser .add_argument ("-SP"       , "--shifting_peak"           , type  = int        , required=True,choices =[-1,1], help = "Flag for whether the fitness landscape changes or not."                                     )
-parser .add_argument ('-t'        , '--type'                    , type  = int        ,required=True,   help = 'Types involved in experiment'                                                               )
-parser .add_argument ('-initn'    , '--initial_number'          , type  = int        ,                 help = 'Starting number of individuals'                                                             )
-parser .add_argument ('-gpm_rate' , '--gpmrate'                 , type  = float      ,                 help = 'GP-map contribution change mutation rate'                                                   )
-parser .add_argument ('-alm_rate' , '--almrate'                 , type  = float      ,                 help = 'Allelic mutation rate'                                                                      )
-parser .add_argument ('-re'       , '--resurrect'               , type  = dir_path   ,                 help = 'Path to reinstate the population from.'                                                     )
-parser .add_argument ('-logvar'   , '--log_variance_covariance' , action='store_true',                 help = 'Whether to collect variance and covariance values for the last tenth of the replicate run.' )
+parser = argparse.ArgumentParser (                                          description           =                             'Simulation presets'                                                                                                                                          )
+parser .add_argument ('-save'     , '--outdir'                  , type   = dir_path     ,                                help = ""                                                                                           "Specify the path to write the results of the simulation.""" )
+parser .add_argument ("-itstart"  , "--iter_start"              , type   = int          ,required =True,                 help = "The number of iterations"                                                                                                                                )
+parser .add_argument ("-itend"    , "--iter_end"                , type   = int          ,required =True,                 help = "The number of iterations"                                                                                                                                )
+parser .add_argument ("-ls"       , "--landscape_increment"     , type   = float        ,required =True,                 help = "Simulation tag for the current instance."                                                                                                                )
+parser .add_argument ("-sim"      , "--siminst"                 , type   = int          ,                                help = "Simulation tag for the current instance."                                                                                                                )
+parser .add_argument ("-SP"       , "--shifting_peak"           , type   = int          , required=True,choices =[-1,1], help = "Flag for whether the fitness landscape changes or not."                                                                                                  )
+parser .add_argument ('-t'        , '--type'                    , type   = int          ,required =True,                 help = 'Types involved in experiment'                                                                                                                            )
+parser .add_argument ('-initn'    , '--initial_number'          , type   = int          ,                                help = 'Starting number of individuals'                                                                                                                          )
+parser .add_argument ('-gpm_rate' , '--gpmrate'                 , type   = float        ,                                help = 'GP-map contribution change mutation rate'                                                                                                                )
+parser .add_argument ('-alm_rate' , '--almrate'                 , type   = float        ,                                help = 'Allelic mutation rate'                                                                                                                                   )
+parser .add_argument ('-re'       , '--resurrect'               , type   = dir_path     ,                                help = 'Path to reinstate the population from.'                                                                                                                  )
+# parser .add_argument ('-logvar'   , '--log_variance_covariance' , action = 'store_true' ,                                help = 'Whether to collect variance and covariance values for the last tenth of the replicate run.'                                                              )
 
 args                         = parser           .parse_args()
 ITSTART                      = int(args.iter_start)
@@ -46,22 +47,21 @@ ITEND                        = int(args.iter_end)
 INSTANCE_N                   = int       (args  .siminst    if args.siminst is not None else 0)
 OUTDIR                       = args.outdir    if args.outdir     is not None else 0
 RESSURECT_PATH               = args.resurrect if args.resurrect  is not None else 0
-LOG_VAR_COVAR_ON             = bool( args.log_variance_covariance )
+# LOG_VAR_COVAR_ON             = bool( args.log_variance_covariance )
 INDTYPE                      = args.type
 EXP                          = "exp{}".format(INDTYPE)
 POPN                         = args.initial_number if args.initial_number is not None else 1000
-SHIFTING_FITNESS_PEAK        = args.shifting_peak 
+SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LANDSCAPE_INCREMENT          = float(args.landscape_increment)
-MUTATION_RATE_ALLELE         = 0.0004 if args.almrate is None else float(args.almrate  )
-MUTATION_RATE_CONTRIB_CHANGE = 0.001 if args.gpmrate is None else float( args.gpmrate )
-MUTATION_VARIANTS_ALLELE     = np.arange(-1,1.1,0.1)
+MUTATION_RATE_ALLELE         = 0.0015 if args.almrate is None else float(args.almrate  )
+MUTATION_RATE_CONTRIB_CHANGE = 0.0001 if args.gpmrate is None else float( args.gpmrate )
 DEGREE                       = 1
 COUNTER_RESET                = 10000
 STD                          = 1
 AMPLITUDE                    = 1
 LOG_FIT_EVERY                = int(1e5) #* every 100 generations
 LOG_VAR_EVERY                = int(1e3) #* generation
-
+PICKING_MEAN_STD             = ( 0,0.5 )
 
 BEGIN_DATE = datetime.now().strftime("%I:%M%p on %B %d, %Y")
 
@@ -72,7 +72,7 @@ def print_receipt()->None:
         "INSTANCE_N"                  : INSTANCE_N,
         "OUTDIR"                      : OUTDIR,
         "RESSURECT_PATH"              : RESSURECT_PATH,
-        "LOG_VAR_COVAR_ON"            : LOG_VAR_COVAR_ON,
+        # "LOG_VAR_COVAR_ON"            : LOG_VAR_COVAR_ON,
         "INDTYPE"                     : INDTYPE,
         "EXP"                         : EXP,
         "POPN"                        : POPN,
@@ -80,7 +80,6 @@ def print_receipt()->None:
         "LANDSCAPE_INCREMENT"         : LANDSCAPE_INCREMENT,
         "MUTATION_RATE_ALLELE"        : MUTATION_RATE_ALLELE,
         "MUTATION_RATE_CONTRIB_CHANGE": MUTATION_RATE_CONTRIB_CHANGE,
-        "MUTATION_VARIANTS_ALLELE"    : MUTATION_VARIANTS_ALLELE.tolist(),
         "DEGREE"                      : DEGREE,
         "COUNTER_RESET"               : COUNTER_RESET,
         "STD"                         : STD,
@@ -88,7 +87,8 @@ def print_receipt()->None:
         "LOG_FIT_EVERY"               : LOG_FIT_EVERY,
         "LOG_VAR_EVERY"               : LOG_VAR_EVERY,
         "date_finished"               : datetime.now().strftime("%I:%M%p on %B %d, %Y"),
-        "date_started"                : BEGIN_DATE
+        "date_started"                : BEGIN_DATE,
+        "PICKING_MEAN_STD" : [*PICKING_MEAN_STD]
     }
     with open(os.path.join(OUTDIR, "parameters_instance{}.json".format(INSTANCE_N)),'w') as infile:
         json.dump(receipt, infile)
@@ -165,11 +165,12 @@ class Fitmap():
 class GPMap():
 
     def __init__(self,contributions:np.ndarray) -> None:
-        self.coeffs_mat = contributions
+        self.coeffs_mat = np.array(contributions,dtype=np.float64)
         self.n_genes    = contributions.shape[1]
 
     def mutation_gpmap_contributions(self)->None:
-        template   = np    .random.randint(-1,2,(4,self.n_genes))
+
+        template   = np    .random.normal(*PICKING_MEAN_STD,(4,4))
         probs      = np    .random.uniform(low=0, high=1, size=(4,self.n_genes)).round(4)
         rows , cols = probs .shape
 
@@ -177,6 +178,7 @@ class GPMap():
             for j in range(cols):
                 if probs[i,j] <= MUTATION_RATE_CONTRIB_CHANGE:
                     self.coeffs_mat[i,j] = template[i,j]
+
 
     def get_contributions(self) ->np.ndarray:
         return np.copy( self.coeffs_mat )
@@ -194,7 +196,8 @@ class Individual:
     def give_birth(self):
 
         def mutation_allele_cointoss(allele):
-            return allele + ( np.random.choice([-1,1]) * 0.1)
+            pick = np.random.normal(*PICKING_MEAN_STD, 1)
+            return allele +  pick
         
         alleles_copy = np.copy(self.alleles)
         for index, gene in enumerate( self.alleles.tolist() ):

@@ -133,7 +133,7 @@ colnames         = ['type #','U_corellated' , 'U_uncorellated' , 'p_val']
 variance_sheet   = pd.DataFrame([], columns=colnames)
 covariance_sheet = pd.DataFrame([], columns=colnames)
 
-for number in [1,3,5,7,9,11,13,15]:
+for number in [3]:
     pvals_var   = []
     pvals_covar = []
 

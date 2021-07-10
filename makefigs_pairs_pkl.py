@@ -54,5 +54,5 @@ figure.text(0.5, 0.04, 'BD Process Iteration (100000 iterations)', ha='center', 
 # plt.show()
 
 
-plt.savefig(f"PKL_25mil_{exp_sym}_v_{exp_asym}.png", bbox_inches='tight')
+plt.savefig(f"PKL_10mil_{exp_sym}_v_{exp_asym}.png", bbox_inches='tight')
 
