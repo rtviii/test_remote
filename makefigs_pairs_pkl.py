@@ -20,21 +20,19 @@ cs = 0
 ca = 0
 
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_sym}/fitness_data/*.csv"):
-
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_sym}/fitness_data/*.pkl"):
 	data = []
 	with open(file, 'rb') as  infile:
 		data       =   pickle.load(infile)
-
 	fitall_sym += np.array( data[:,0])
 	cs         += 1
 
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_asym}/fitness_data/*.csv"):
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_asym}/fitness_data/*.pkl"):
 	data = []
 	with open(file, 'rb') as  infile:
 		data       =   pickle.load(infile)
-
+		print(data)
 	fitall_asym += np.array( data[:,0])
 	ca          += 1
 
@@ -51,8 +49,8 @@ figure.set_size_inches(20,8)
 plt.title("Average Fitness")
 plt.suptitle(f"Experiments {exp_sym},{exp_asym}",fontsize=20)
 figure.text(0.5, 0.04, 'BD Process Iteration (100000 iterations)', ha='center', va='center')
-# plt.show()
+plt.show()
 
 
-plt.savefig(f"PKL_10mil_{exp_sym}_v_{exp_asym}.png", bbox_inches='tight')
+# plt.savefig(f"PKL_10mil_{exp_sym}_v_{exp_asym}.png", bbox_inches='tight')
 

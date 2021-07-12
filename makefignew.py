@@ -23,7 +23,7 @@ brateall  =  0
 c = 0
 
 
-for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/fitness_data/*.csv"):
+for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/fitness_data/*.pkl"):
 
 	data = []
 	with open(file, 'rb') as  infile:

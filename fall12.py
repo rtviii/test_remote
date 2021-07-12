@@ -152,12 +152,12 @@ class Fitmap():
     def getMap(self):
         def _(phenotype:np.ndarray):
             return             self.amplitude * math.exp(
-                -(np.sum(
+                -(
+                    np.sum(
                     ((phenotype - self.mean)**2)
                     /
                     (2*self.std**2)
                     )
-
                 )
                 )
         return _
@@ -255,20 +255,21 @@ class Universe:
         return  reduce(lambda x,y: x + y['fitness']*y['n'] , self.phenotypeHM.values(),0)/self.poplen 
 
     def tick(self):
+
         self.iter         +=  1
 
         def pick_death():
 
             target_keys = [* self.phenotypeHM.keys  () ]
-            likelihoods = [  phenotype['n']/self.poplen for phenotype in self.phenotypeHM.values()]
+            likelihoods = [phenotype['n']/self.poplen for phenotype in self.phenotypeHM.values()]
             picked_bin  = np.random.choice(target_keys,p=likelihoods)
             return (picked_bin, np.random.choice(self.phenotypeHM[picked_bin]['individuals']) )
 
         def pick_parent():
 
-            total_fitness = reduce  (lambda t,h: t+h ,[*map(lambda x: x['n']*x['fitness'], self .phenotypeHM.values())])
-            target_keys   = [* self                                                          .phenotypeHM.keys  () ]
-            likelihoods   = [  phenotype['n']* phenotype['fitness']/total_fitness for phenotype in self.phenotypeHM.values()]
+            total_fitness = reduce(lambda t,h: t+h ,[*map(lambda x: x['n']*x['fitness'], self .phenotypeHM.values())])
+            target_keys   = [*self.phenotypeHM.keys() ]
+            likelihoods   = [phenotype['n']* phenotype['fitness']/total_fitness for phenotype in self.phenotypeHM.values()]
             picked_bucket = np.random.choice(target_keys,p=likelihoods)
 
             return np.random.choice(self.phenotypeHM[picked_bucket]['individuals'])
@@ -280,7 +281,7 @@ class Universe:
 
         self.phenotypeHM[type_key]['individuals'].remove(_)
         self.phenotypeHM[type_key]['n'] -= 1
-        self.poplen-=1
+        self.poplen     -=1
 
         if self.phenotypeHM[type_key]['n'] == 0:
             self.phenotypeHM.pop(type_key)
