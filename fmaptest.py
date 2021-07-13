@@ -106,15 +106,15 @@ np.array([
        [-1.02, -1.  ,  1.03,  1.01],
        [-1.02, -1.  ,  1.03,  1.01]])
 
-print(np.cov(phenotypes, rowvar=False))
+print(np.cov(phenotypes))
 
 
-data = pd.DataFrame({
-	'trait1': phenotypes[:, 0],
- 	'trait2': phenotypes[:, 1], 
- 	'trait3': phenotypes[:, 2], 
- 	'trait4': phenotypes[:, 3], 
-	})
+# data = pd.DataFrame({
+# 	'trait1': phenotypes[:, 0],
+#  	'trait2': phenotypes[:, 1], 
+#  	'trait3': phenotypes[:, 2], 
+#  	'trait4': phenotypes[:, 3], 
+# 	})
 
-print(data)
-print("correltaion", data.corr(method='pearson'))
+# print(data)
+# print("correltaion", data.corr(method='pearson'))
