@@ -27,18 +27,18 @@ def dir_path(string):
             raise PermissionError(string)
 
 # parser .add_argument ("-it"       , "--itern"               , type= int      ,                 help = "The number of iterations"                                                                                            )
-parser = argparse.ArgumentParser (                                          description           =                             'Simulation presets'                                                                                                                                          )
-parser .add_argument ('-save'     , '--outdir'                  , type   = dir_path     ,                                help = ""                                                                                           "Specify the path to write the results of the simulation.""" )
-parser .add_argument ("-itstart"  , "--iter_start"              , type   = int          ,required =True,                 help = "The number of iterations"                                                                                                                                )
-parser .add_argument ("-itend"    , "--iter_end"                , type   = int          ,required =True,                 help = "The number of iterations"                                                                                                                                )
-parser .add_argument ("-ls"       , "--landscape_increment"     , type   = float        ,required =True,                 help = "Simulation tag for the current instance."                                                                                                                )
-parser .add_argument ("-sim"      , "--siminst"                 , type   = int          ,                                help = "Simulation tag for the current instance."                                                                                                                )
-parser .add_argument ("-SP"       , "--shifting_peak"           , type   = int          , required=True,choices =[-1,1], help = "Flag for whether the fitness landscape changes or not."                                                                                                  )
-parser .add_argument ('-t'        , '--type'                    , type   = int          ,required =True,                 help = 'Types involved in experiment'                                                                                                                            )
-parser .add_argument ('-initn'    , '--initial_number'          , type   = int          ,                                help = 'Starting number of individuals'                                                                                                                          )
-parser .add_argument ('-gpm_rate' , '--gpmrate'                 , type   = float        ,                                help = 'GP-map contribution change mutation rate'                                                                                                                )
-parser .add_argument ('-alm_rate' , '--almrate'                 , type   = float        ,                                help = 'Allelic mutation rate'                                                                                                                                   )
-parser .add_argument ('-re'       , '--resurrect'               , type   = dir_path     ,                                help = 'Path to reinstate the population from.'                                                                                                                  )
+parser = argparse.ArgumentParser (                                         description           =                             'Simulation presets'                                                                                                  )
+parser           .add_argument   ('-save' , '--outdir' , type =            dir_path    , help    =                             ""                                                       "Specify the path to write the results of the simulation.""" )
+parser           .add_argument   ("-itstart" , "--iter_start" , type =     int         ,required =True, help =                 "The number of iterations"                                                                                            )
+parser           .add_argument   ("-itend" , "--iter_end" , type =         int         ,required =True, help =                 "The number of iterations"                                                                                            )
+parser           .add_argument   ("-ls" , "--landscape_increment" , type = float       ,required =True, help =                 "Simulation tag for the current instance."                                                                            )
+parser           .add_argument   ("-sim" , "--siminst" , type =            int         , help    =                             "Simulation tag for the current instance."                                                                            )
+parser           .add_argument   ("-SP" , "--shifting_peak" , type =       int         , required=True,choices =[-1,1], help = "Flag for whether the fitness landscape changes or not."                                                              )
+parser           .add_argument   ('-t' , '--type' , type =                 int         ,required =True, help =                 'Types involved in experiment'                                                                                        )
+parser           .add_argument   ('-initn' , '--initial_number' , type =   int         , help    =                             'Starting number of individuals'                                                                                      )
+parser           .add_argument   ('-gpm_rate' , '--gpmrate' , type =       float       , help    =                             'GP-map contribution change mutation rate'                                                                            )
+parser           .add_argument   ('-alm_rate' , '--almrate' , type =       float       , help    =                             'Allelic mutation rate'                                                                                               )
+parser           .add_argument   ('-re' , '--resurrect' , type =           dir_path    , help    =                             'Path to reinstate the population from.'                                                                              )
 # parser .add_argument ('-logvar'   , '--log_variance_covariance' , action = 'store_true' ,                                help = 'Whether to collect variance and covariance values for the last tenth of the replicate run.'                                                              )
 
 args                         = parser           .parse_args()
@@ -53,8 +53,8 @@ EXP                          = "exp{}".format(INDTYPE)
 POPN                         = args.initial_number if args.initial_number is not None else 1000
 SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LANDSCAPE_INCREMENT          = float(args.landscape_increment)
-MUTATION_RATE_ALLELE         = 0.01 if args.almrate is None else float(args.almrate  )
-MUTATION_RATE_CONTRIB_CHANGE = 0.01 if args.gpmrate is None else float( args.gpmrate )
+MUTATION_RATE_ALLELE         = 0.0001 if args.almrate is None else float(args.almrate  )
+MUTATION_RATE_CONTRIB_CHANGE = 0.0001 if args.gpmrate is None else float( args.gpmrate )
 DEGREE                       = 1
 COUNTER_RESET                = 10000
 STD                          = 1
@@ -144,16 +144,17 @@ INDIVIDUAL_INITS     =  {
 [ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','fitness_data', 'terminal']]
 
 class Fitmap():
+
     def __init__(self,std:float, amplitude:float, mean:np.ndarray)->None: 
+
         self.std       = std
         self.amplitude = amplitude
-        self.mean      = mean
 
-    def getMap(self):
+    def getMap(self, current_mean:np.ndarray):
         def _(phenotype:np.ndarray):
             return             self.amplitude * math.exp(
                 -(np.sum(
-                    ((phenotype - self.mean)**2)
+                    ((phenotype - current_mean)**2)
                     /
                     (2*self.std**2)
                     )
@@ -168,17 +169,17 @@ class GPMap():
         self.coeffs_mat = np.array(contributions,dtype=np.float64)
         self.n_genes    = contributions.shape[1]
 
+
     def mutation_gpmap_contributions(self)->None:
 
-        template   = np    .random.normal(*PICKING_MEAN_STD,(4,4))
-        probs      = np    .random.uniform(low=0, high=1, size=(4,self.n_genes)).round(4)
-        rows , cols = probs .shape
+        probs           = np    .random.uniform(low=0, high=1, size=(4,4)).round(4)
+        rows     , cols = probs .shape
 
         for i in  range(rows):
             for j in range(cols):
                 if probs[i,j] <= MUTATION_RATE_CONTRIB_CHANGE:
-                    self.coeffs_mat[i,j] = template[i,j]
-
+                    pick = np.random.normal(*PICKING_MEAN_STD, 1)
+                    self.coeffs_mat[i,j] += pick
 
     def get_contributions(self) ->np.ndarray:
         return np.copy( self.coeffs_mat )

@@ -132,6 +132,8 @@ INDIVIDUAL_INITS     =  {
 
 [ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','fitness_data']]
 
+
+
 class FitnessMap:
 
 	def __init__(self, std):
@@ -158,7 +160,6 @@ def mutate_gpmap(contributions):
 				contributions[i,j] += pick
 
 def mutate_alleles(alleles:np.ndarray)->None:
-
 	for g in range(alleles.shape[0]):
 		if np.random.uniform() <= MUTATION_RATE_ALLELE:
 			pick = np.random.normal(*PICKING_MEAN_STD, 1)
@@ -272,7 +273,6 @@ class Universe:
 			'began_loggin_at' : self.var_covar_agg[ 'began_loggin_at' ],
 			'logged_every'    : self.var_covar_agg[ 'logged_every'    ]
 		}
-
 		with open(outfile,'wb') as log:
 			pickle.dump(_, log)
 
@@ -348,13 +348,19 @@ class Universe:
 	 				else: 
 	 					coin = np.random.choice([1,-1])
 	 					self.mean[i] += coin*LANDSCAPE_INCREMENT
+
+
 #***************** INITS ***************
 
 alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
-gpms     = np.array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float64)
+gpms     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float64)
 phns     = np        .array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float64)
 Fitmap   = FitnessMap      (1)
-universe = Universe        (ITSTART,alls,gpms,phns,Fitmap,
+universe = Universe        (ITSTART,
+                    alls,
+                    gpms,
+                    phns,
+                    Fitmap,
                     np.array([0,0,0,0], dtype=np.float64))
 
 #*******************************************************Y
@@ -367,3 +373,4 @@ if OUTDIR:
     with open(os.path.join(OUTDIR,'fitness_data','data{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(universe.fitmean_agg, f)
     universe.write_covar_pkl(OUTDIR)
 print_receipt()
+

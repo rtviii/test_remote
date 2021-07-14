@@ -1,3 +1,4 @@
+from pprint import pprint
 import random
 import timeit
 from datetime import datetime
@@ -50,8 +51,8 @@ INDTYPE                      = args.type
 POPN                         = args.initial_number if args.initial_number is not None else 1000
 SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LS_INCREMENT                 = float(args.landscape_increment)
-MUTATION_RATE_ALLELE         = 0.005 if args.almrate is None else float(args.almrate )
-MUTATION_RATE_CONTRIB_CHANGE = 0.0001 if args.gpmrate is None else float( args.gpmrate )
+MUTATION_RATE_ALLELE         = 0.05 if args.almrate is None else float(args.almrate )
+MUTATION_RATE_CONTRIB_CHANGE = 0.001 if args.gpmrate is None else float( args.gpmrate )
 DEGREE                       = 1
 LS_SHIFT_EVERY               = int(1e4)
 STD                          = 1
@@ -130,7 +131,9 @@ INDIVIDUAL_INITS     =  {
    },
 }
 
-[ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','fitness_data']]
+[ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','fitness_data', 'terminal']]
+
+
 
 class FitnessMap:
 
@@ -158,7 +161,6 @@ def mutate_gpmap(contributions):
 				contributions[i,j] += pick
 
 def mutate_alleles(alleles:np.ndarray)->None:
-
 	for g in range(alleles.shape[0]):
 		if np.random.uniform() <= MUTATION_RATE_ALLELE:
 			pick = np.random.normal(*PICKING_MEAN_STD, 1)
@@ -202,6 +204,7 @@ class Universe:
 		mean: np.ndarray,
 		) -> None:
 
+		np.set_printoptions(precision=2)
 		self.it     = current_iter
 		self.ALLS   = ALLS
 		self.GPMS   = GPMS
@@ -210,10 +213,11 @@ class Universe:
 		self.mean = mean
 		# ? ------------------------------ AGGREGATORS
 		self.var_covar_agg = {
-			"began_loggin_at": -1,
-			"logged_every"   : LOG_VAR_EVERY,
-			'phenotype_agg' : [],
-			"elapsed"        : 0
+			"began_loggin_at" : -1 ,
+			"logged_every"    : LOG_VAR_EVERY,
+			"var"             : np.array([0,0,0,0 ], dtype=np.float64),
+			"covar"           : np.array([0,0,0,0,0,0], dtype=np.float64),
+			"elapsed"         : 0
 		}
 		self.fitmean_agg   = np.array([])
 		self.mean_phen_agg = np.mean(self.PHNS, axis=0)
@@ -234,13 +238,16 @@ class Universe:
 
 		self.it += 1
 
-		if self.it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(self.it%(LOG_VAR_EVERY)):
-
-			self.log_var_covar()
+		if it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(it%(LOG_VAR_EVERY)):
+			...
+			#? Log variance and covariance
+			# self.log_var_covar(it)
 
 		if not self.it % LOG_FIT_EVERY:
+
 			cur_it           = np.array([self.get_avg_fitness(), *np.around(self.mean,2)])
-			self.fitmean_agg = np.array([*self.fitmean_agg, cur_it])
+			#print(f"Iter {self.it}. Got avg [ fitness ]:  ", cur_it, "|  fit mean: ", self.mean)
+			# self.fitmean_agg = np.array([*self.fitmean_agg, cur_it])
 
 
 		if ( not self.it % LS_SHIFT_EVERY ):
@@ -260,29 +267,51 @@ class Universe:
 		self.ALLS[death_index] = _alleles
 		self.GPMS[death_index] = _contribs
 
+
+		if not self.it % 1000:
+			# self.mean_phen_agg.append(np.mean(self.PHNS, axis=0))
+			self.mean_phen_agg = np.row_stack([ self.mean_phen_agg, np.mean(self.PHNS, axis=0) ])
+
 	def get_avg_fitness(self)->float:
 		return reduce(lambda x,y: x + y, map(self.fitmap.getmap(self.mean), self.PHNS))/len(self.PHNS)
 
-	def write_covar_pkl(self,outdir):
+	# def log_var_covar(self, itern):
+	# 	var               , covar              = tuple(map( lambda _: np.around(_,5),self.get_var_covar()))
+	# 	self.var_covar_agg['var']                                   = np.sum([ self.var_covar_agg['var'], var ],axis=0)
+	# 	self.var_covar_agg['covar']                                 = np.sum([ self.var_covar_agg['covar'], covar ],axis=0)
+	# 	self.var_covar_agg['elapsed']                              += 1
 
-		outfile    = os.path.join(outdir,'var_covar','mean_var_covar_{}.pkl'.format(REPLICATE_N))
-		_ = {
-			'phenotype_agg'   : self.mean_phen_agg,
-			'elapsed'         : self.var_covar_agg[ 'elapsed'         ],
-			'began_loggin_at' : self.var_covar_agg[ 'began_loggin_at' ],
-			'logged_every'    : self.var_covar_agg[ 'logged_every'    ]
-		}
+	# 	if                 self.var_covar_agg['began_loggin_at'] == -1:
+	# 		self.var_covar_agg['began_loggin_at']                       = itern
 
-		with open(outfile,'wb') as log:
-			pickle.dump(_, log)
+	# def get_var_covar(self)->List[np.ndarray]:
+		
+	# 	traitsvar = np.array([ np.var(self.PHNS[:,_]) for _ in range(0,4)], dtype=np.float64) 
+	# 	# cov = np.cov([ self.PHNS[:,_] for _ in range(0,4)], bias=True, rowvar=True)
+	# 	cov       = np.cov(self.PHNS, bias=True, rowvar=False)
 
-	def log_var_covar(self):
-		self.mean_phen_agg = np.row_stack([ self.mean_phen_agg, np.mean(self.PHNS, axis=0) ])
+	# 	t1t2 = cov[0,1]
+	# 	t1t3 = cov[0,2]
+	# 	t1t4 = cov[0,3]
+	# 	t2t3 = cov[1,2]
+	# 	t2t4 = cov[1,3]
+	# 	t3t4 = cov[2,3]
 
-		self.var_covar_agg['elapsed']                              += 1
-		if                 self.var_covar_agg['began_loggin_at'] == -1:
-			self.var_covar_agg['began_loggin_at']                       = self.it
+	# 	return [np.array(traitsvar), np.array([t1t2,t1t3,t1t4,t2t3,t2t4,t3t4])]
 
+	# def write_mean_var_covar(self,outdir):
+	# 	outfile    = os.path.join(outdir,'var_covar','mean_var_covar_{}.json'.format(REPLICATE_N))
+	# 	_ = {
+	# 		'var'            : self.var_covar_agg['var'    ].tolist(),
+	# 		'covar'          : self.var_covar_agg['covar'  ].tolist(),
+	# 		'elapsed'        : self.var_covar_agg['elapsed'],
+	# 		'began_loggin_at': self.var_covar_agg[ 'began_loggin_at' ],
+	# 		'logged_every'   : self.var_covar_agg[ 'logged_every' ]
+	# 	}
+	# 	with open(outfile,'w') as log:
+	# 		json.dump(_, log)
+
+	
 	def shift_landscape(
 	 	self,
 	 	LANDSCAPE_INCREMENT: float,
@@ -314,6 +343,7 @@ class Universe:
 	 					...
 	 			else: 
 	 				self.mean += np.random.choice([1,-1])*LANDSCAPE_INCREMENT
+				
 	 	#? Uncorellated shifts
 	 	else:
 	 		# *Large IT
@@ -348,13 +378,18 @@ class Universe:
 	 				else: 
 	 					coin = np.random.choice([1,-1])
 	 					self.mean[i] += coin*LANDSCAPE_INCREMENT
-#***************** INITS ***************
 
-alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
+
+#***************** INITS ***************
+alls     = np.array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles'     ] for i in range(POPN) ], dtype=np.float64)
 gpms     = np.array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float64)
-phns     = np        .array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float64)
-Fitmap   = FitnessMap      (1)
-universe = Universe        (ITSTART,alls,gpms,phns,Fitmap,
+phns     = np.array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float64)
+Fitmap   = FitnessMap(1)
+universe = Universe(0,
+                    alls,
+                    gpms,
+                    phns,
+                    Fitmap,
                     np.array([0,0,0,0], dtype=np.float64))
 
 #*******************************************************Y
@@ -365,5 +400,16 @@ for it in range(ITSTART, ITEND+1): universe.tick()
 
 if OUTDIR:
     with open(os.path.join(OUTDIR,'fitness_data','data{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(universe.fitmean_agg, f)
-    universe.write_covar_pkl(OUTDIR)
+    # universe.write_mean_var_covar(OUTDIR)
 print_receipt()
+
+# p = np.array(INDIVIDUAL_INITS['99']['coefficients']) @ np.array(INDIVIDUAL_INITS['99']['alleles']) 
+# print(p)
+print("------ End ---------")
+# pprint(universe.GPMS)
+
+
+print("Covar at end")
+avgphens_time = np.array( universe.mean_phen_agg )
+pprint(np.cov( avgphens_time.T))
+# pprint(np.cov(avgphens_time,rowvar=False))

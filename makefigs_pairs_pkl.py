@@ -19,14 +19,12 @@ fitall_asym = 0
 cs = 0
 ca = 0
 
-
 for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_sym}/fitness_data/*.pkl"):
 	data = []
 	with open(file, 'rb') as  infile:
 		data       =   pickle.load(infile)
 	fitall_sym += np.array( data[:,0])
 	cs         += 1
-
 
 for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_asym}/fitness_data/*.pkl"):
 	data = []
@@ -35,7 +33,6 @@ for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_
 		print(data)
 	fitall_asym += np.array( data[:,0])
 	ca          += 1
-
 
 fitall_sym                                =                       fitall_sym  /cs
 fitall_asym                               =                       fitall_asym /ca

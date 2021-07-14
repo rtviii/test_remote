@@ -39,7 +39,7 @@ def experiment(number, variance_sheet, covariance_sheet):
     varcovarfolder_sym  = os.path.join(abs_root, f"exp{number}",'var_covar')
     varcovarfolder_asym = os.path.join(abs_root, f"exp{number+1}",'var_covar')
 
-    for file in glob.glob(f"{varcovarfolder_sym}/*.json"):
+    for file in glob.glob(f"{varcovarfolder_sym}/*.pkl"):
 
         replicate_number = re.findall(r'\d+', file)[-1]
         instvar, instcovar = get_variance_replicate(file)
@@ -47,7 +47,7 @@ def experiment(number, variance_sheet, covariance_sheet):
         var_cor.append(instvar)
         cov_cor.append(instcovar)
 
-    for file in glob.glob(f"{varcovarfolder_asym}/*.json"):
+    for file in glob.glob(f"{varcovarfolder_asym}/*.pkl"):
 
         replicate_number = re.findall(r'\d+', file)[-1]
         instvar, instcovar = get_variance_replicate(file)
@@ -125,15 +125,15 @@ def experiment(number, variance_sheet, covariance_sheet):
          [number, str(np.around(mean_variance_correlated,5)), str(np.around(mean_variance_uncorrelated,5)) ,str(np.around(pvals_covar,5))] 
          ],columns=colnames, ))
 
-
-
 abs_root = sys.argv[1]
+
 # exp_type = int( sys.argv[2] )
 colnames         = ['type #','U_corellated' , 'U_uncorellated' , 'p_val']
 variance_sheet   = pd.DataFrame([], columns=colnames)
 covariance_sheet = pd.DataFrame([], columns=colnames)
 
-for number in [3]:
+for number in [1]:
+
     pvals_var   = []
     pvals_covar = []
 
@@ -180,15 +180,6 @@ for number in [3]:
 
     variance_sym= variance_sym[:smaller]
     variance_asym= variance_asym[:smaller]
-
-
-    # print(f"variance sample for exp {exp_type}"  , len(variance_sym ))
-    # print(f"variance sample for exp {exp_type+1}", len(variance_asym))
-
-    # print("Smaller:", smaller)
-    # print("trucnated exps:", len(variance_sym[:smaller]))
-    # print("trucnated expa:", len(variance_asym[:smaller]))
-
 
     p_var_t1 = ttest_ind(variance_sym[:,0], variance_asym[:,0])[1]
     p_var_t2 = ttest_ind(variance_sym[:,1], variance_asym[:,1])[1]
