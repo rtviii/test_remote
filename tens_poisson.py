@@ -42,17 +42,18 @@ parser .add_argument ('-re'       , '--resurrect'               , type   = dir_p
 # parser .add_argument ('-logvar'   , '--log_variance_covariance' , action = 'store_true' ,                                help = 'Whether to collect variance and covariance values for the last tenth of the replicate run.'                                                              )
 
 args                         = parser .parse_args()
+GENERATION 					 = 1000
 ITSTART                      = int(args.iter_start)
 ITEND                        = int(args.iter_end)
 REPLICATE_N                  = int (args .siminst if args.siminst is not None else 0)
 OUTDIR                       = args.outdir if args.outdir is not None else 0
 RESSURECT_PATH               = args.resurrect if args.resurrect is not None else 0
 INDTYPE                      = args.type
-POPN                         = args.initial_number if args.initial_number is not None else 1000
+POPN                         = args.initial_number if args.initial_number is not None else 100
 SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LS_INCREMENT                 = float(args.landscape_increment)
-MUTATION_RATE_ALLELE         = 0.05 if args.almrate is None else float(args.almrate )
-MUTATION_RATE_CONTRIB_CHANGE = 0.001 if args.gpmrate is None else float( args.gpmrate )
+MUTATION_RATE_ALLELE         = 5 if args.almrate is None else float(args.almrate ) #? in entry-mutations per generation
+MUTATION_RATE_CONTRIB_CHANGE = 5 if args.gpmrate is None else float( args.gpmrate ) #? in mutations per generation
 DEGREE                       = 1
 LS_SHIFT_EVERY               = int(1e4)
 STD                          = 1
@@ -107,47 +108,58 @@ INDIVIDUAL_INITS     =  {
                         [1,1,1,1],
                     ], dtype=np.float64)
    },
-#    testtype
-   "0":{
-        'trait_n'       :  4,
-        'alleles'       :  np.array([1,1,-1,-1], dtype=np.float64),
-        'coefficients'  :  np.array([
-                        [1,0,0,0],
-                        [0,1,0,0],
-                        [0,0,1,0],
-                        [0,0,0,1],
-                    ], dtype=np.float64)
-   },
-#    testtype2
-   "99":{
-        'trait_n'       :  4,
-        'alleles'       :  np.array([1,-1,-1,-1], dtype=np.float64),
-        'coefficients'  :  np.array([
-                        [0,1,1,1],
-                        [0,1,1,1],
-                        [0,1,1,1],
-                        [0,1,1,1],
-                    ], dtype=np.float64)
-   },
 }
 
-[ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','fitness_data', 'terminal']]
+[ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','fitness_data']]
 
+# Pick a number from poisson
 
+def make_mutation_plan_alleles(
+	_lambda:float,
+	period :int=GENERATION):
 
-class FitnessMap:
+	"""
+	@lambda - the rate of the poisson distribution, in this case -- mutrate per generation
+	@period - number the interval over which to pick, in this case a single generation
+	"""
 
-	def __init__(self, std):
-		self.std = std
+	#? how many mutations occur in a given period (Generation)
+	poolsize = np.random.poisson(_lambda)
 
-	def getmap(self, mean):
+	#? at which iterations do they occur
+	iterns = np.random.randint(low=0, high=1000, size=poolsize); iterns.sort()
 
-		u   = mean
-		exp = math.exp
+	#? at which positions do they occur?
+	entries = random.sample(range (1,(period*4+1)),poolsize); entries.sort();
+	posns   = np.array([*map (lambda x: x%4, entries)])
 
-		def _(phenotype:np.ndarray):
-			return AMPLITUDE * exp(-(np.sum(((phenotype - u)**2)/(2*self.std**2))))
-		return _
+	return {
+		"posns" : posns,
+		"iterns": iterns
+	}
+
+def make_mutation_plan_contrib(
+	_lambda:float,
+	period :int=GENERATION):
+	"""
+	@lambda - the rate of the poisson distribution, in this case -- mutrate per generation
+	@period - number the interval over which to pick, in this case a single generation
+	"""
+	#? how many mutations occur in a given period (Generation)
+	poolsize   =   np.random.poisson(_lambda)
+
+	#? at which iterations do they occur
+	iterns = np.random.randint(low=0, high=1000, size=poolsize); iterns.sort()
+
+	#? at which positions do they occur?
+	entries = random.sample(range (1,( period*16 +1 )),poolsize); entries.sort();
+	posns   = np.array([*map (lambda x: ((x%16)//4,(x%16)%4), entries)])
+
+	return {
+		"posns" : posns,
+		"iterns": iterns
+	}
+
 
 def mutate_gpmap(contributions):
 
@@ -165,32 +177,19 @@ def mutate_alleles(alleles:np.ndarray)->None:
 		if np.random.uniform() <= MUTATION_RATE_ALLELE:
 			pick = np.random.normal(*PICKING_MEAN_STD, 1)
 			alleles[g] += pick
-	
-def print_receipt()->None:
-	receipt = {
-		  "ITSTART"                      : ITSTART                                                            ,
-		  "ITEND"                        : ITEND                                                              ,
-		  "REPLICATE_N"                   : REPLICATE_N                                                         ,
-		  "OUTDIR"                       : OUTDIR                                                             ,
-		  "RESSURECT_PATH"               : RESSURECT_PATH                                                     ,
-		  "INDTYPE"                      : INDTYPE                                                            ,
-		  "POPN"                         : POPN                                                               ,
-		  "SHIFTING_FITNESS_PEAK"        : SHIFTING_FITNESS_PEAK                                              ,
-		  "LS_INCREMENT"                 : LS_INCREMENT                                                       ,
-		  "MUTATION_RATE_ALLELE"         : MUTATION_RATE_ALLELE                                               ,
-		  "MUTATION_RATE_CONTRIB_CHANGE" : MUTATION_RATE_CONTRIB_CHANGE                                       ,
-		  "DEGREE"                       : DEGREE                                                             ,
-		  "LS_SHIFT_EVERY"                : LS_SHIFT_EVERY                                                      ,
-		  "STD"                          : STD                                                                ,
-		  "AMPLITUDE"                    : AMPLITUDE                                                          ,
-		  "LOG_FIT_EVERY"                : LOG_FIT_EVERY                                                      ,
-		  "LOG_VAR_EVERY"                : LOG_VAR_EVERY                                                      ,
-		  "date_finished"                : datetime                    .now().strftime("%I:%M%p on %B %d, %Y"),
-		  "date_started"                 : BEGIN_DATE                                                         ,
-		"PICKING_MEAN_STD" : [*PICKING_MEAN_STD]
-	}
-	with open(os.path.join(OUTDIR, "parameters_replicate{}.json".format(REPLICATE_N)),'w') as infile:
-		json.dump(receipt, infile)
+
+class FitnessMap:
+
+	def __init__(self, std):
+		self.std = std
+	def getmap(self, mean):
+
+		u   = mean
+		exp = math.exp
+
+		def _(phenotype:np.ndarray):
+			return AMPLITUDE * exp(-(np.sum(((phenotype - u)**2)/(2*self.std**2))))
+		return _
 
 class Universe:
 
@@ -204,26 +203,30 @@ class Universe:
 		mean: np.ndarray,
 		) -> None:
 
-		np.set_printoptions(precision=2)
-		self.it     = current_iter
-		self.ALLS   = ALLS
-		self.GPMS   = GPMS
-		self.PHNS   = PHNS
-		self.fitmap = fmap
-		self.mean = mean
-		# ? ------------------------------ AGGREGATORS
+
+		# ? ------------------------------ [ STATE ]
+		self.it            = current_iter
+		self.ALLS          = ALLS
+		self.GPMS          = GPMS
+		self.PHNS          = PHNS
+
+		# ? ------------------------------ [ ENV ]
+		self.fitmap                = fmap
+		self.mean                  = mean
+		self.mutation_plan_contrib = make_mutation_plan_contrib(MUTATION_RATE_CONTRIB_CHANGE)
+		self.mutation_plan_alleles = make_mutation_plan_alleles(MUTATION_RATE_ALLELE)
+
+		# ? ------------------------------ [ AGGREGATORS ]
 		self.var_covar_agg = {
-			"began_loggin_at" : -1 ,
-			"logged_every"    : LOG_VAR_EVERY,
-			"var"             : np.array([0,0,0,0 ], dtype=np.float64),
-			"covar"           : np.array([0,0,0,0,0,0], dtype=np.float64),
-			"elapsed"         : 0
+			"began_loggin_at": -1,
+			"logged_every"   : LOG_VAR_EVERY,
+			'phenotype_agg' : [],
+			"elapsed"        : 0
 		}
 		self.fitmean_agg   = np.array([])
 		self.mean_phen_agg = np.mean(self.PHNS, axis=0)
 
 	def pick_parent(self)->int:
-
 		indices   = np.arange(len( self.PHNS ))
 		fitnesses = np.array( [  *map( Fitmap.getmap(self.mean), self.PHNS)] )
 		cumfit    = reduce(lambda x,y : x+y, fitnesses)
@@ -236,18 +239,18 @@ class Universe:
 
 	def tick(self):
 
-		self.it += 1
+		# pprint(self.mutation_plan)
 
-		if it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(it%(LOG_VAR_EVERY)):
-			...
-			#? Log variance and covariance
-			# self.log_var_covar(it)
+
+
+
+
+		if self.it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(self.it%(LOG_VAR_EVERY)):
+			self.log_var_covar()
 
 		if not self.it % LOG_FIT_EVERY:
-
 			cur_it           = np.array([self.get_avg_fitness(), *np.around(self.mean,2)])
-			#print(f"Iter {self.it}. Got avg [ fitness ]:  ", cur_it, "|  fit mean: ", self.mean)
-			# self.fitmean_agg = np.array([*self.fitmean_agg, cur_it])
+			self.fitmean_agg = np.array([*self.fitmean_agg, cur_it])
 
 
 		if ( not self.it % LS_SHIFT_EVERY ):
@@ -259,59 +262,81 @@ class Universe:
 
 		_alleles    = np.copy(self.ALLS[birth_index])
 		_contribs   = np.copy(self.GPMS[birth_index])
+		while bool(len(self.mutation_plan_alleles['iterns'])) and self.it % GENERATION == self.mutation_plan_alleles['iterns'][0]:
+			# print(f"Itern {self.it}")
+			# print("__________________________________")
+			# pprint(self.mutation_plan_alleles)
+			posn = self.mutation_plan_alleles['posns'][0]
+			# print("Mut posn " ,posn)
+			# print("alleles before")
+			# pprint(_alleles)
+			_alleles[posn] += np.random.normal(*PICKING_MEAN_STD)
+			# print("allels after:")
+			# pprint(_alleles)
+			# print("__________________________________")
 
-		mutate_alleles(_alleles)
-		mutate_gpmap(_contribs)
+
+			self.mutation_plan_alleles['iterns'] = self.mutation_plan_alleles['iterns'][1:]
+			self.mutation_plan_alleles['posns' ] = self.mutation_plan_alleles['posns' ][1:]
+
+		while bool(len(self.mutation_plan_contrib['iterns'])) and self.it % GENERATION == self.mutation_plan_contrib['iterns'][0]:
+			# print(f"Itern {self.it}")
+			# print("__________________________________")
+			# pprint(self.mutation_plan_contrib)
+			posn = tuple(self.mutation_plan_contrib['posns'][0])
+			# print("Mut posn " ,posn)
+			# pprint(_contribs)
+			_contribs[posn] += np.random.normal(*PICKING_MEAN_STD)
+			# print("Contribs after:")
+			pprint(_contribs)
+			# print("__________________________________")
+
+
+			self.mutation_plan_contrib['iterns'] = self.mutation_plan_contrib['iterns'][1:]
+			self.mutation_plan_contrib['posns' ] = self.mutation_plan_contrib['posns' ][1:]
+			
+		if self.it % GENERATION == 0:
+
+			self.mutation_plan_contrib = make_mutation_plan_contrib(MUTATION_RATE_CONTRIB_CHANGE)
+			self.mutation_plan_alleles = make_mutation_plan_alleles(MUTATION_RATE_ALLELE)
+			# print("===================================================")
+			# print(f"Iteration :{self.it}")
+			# pprint("Updated mutation plan")
+			# pprint(self.mutation_plan)
+			# print("===================================================")
+
+		
+		
+		
+
 
 		self.PHNS[death_index] =  _contribs @ _alleles.T
 		self.ALLS[death_index] = _alleles
 		self.GPMS[death_index] = _contribs
-
-
-		if not self.it % 1000:
-			# self.mean_phen_agg.append(np.mean(self.PHNS, axis=0))
-			self.mean_phen_agg = np.row_stack([ self.mean_phen_agg, np.mean(self.PHNS, axis=0) ])
+		self.it += 1
 
 	def get_avg_fitness(self)->float:
 		return reduce(lambda x,y: x + y, map(self.fitmap.getmap(self.mean), self.PHNS))/len(self.PHNS)
 
-	# def log_var_covar(self, itern):
-	# 	var               , covar              = tuple(map( lambda _: np.around(_,5),self.get_var_covar()))
-	# 	self.var_covar_agg['var']                                   = np.sum([ self.var_covar_agg['var'], var ],axis=0)
-	# 	self.var_covar_agg['covar']                                 = np.sum([ self.var_covar_agg['covar'], covar ],axis=0)
-	# 	self.var_covar_agg['elapsed']                              += 1
+	def write_covar_pkl(self,outdir):
 
-	# 	if                 self.var_covar_agg['began_loggin_at'] == -1:
-	# 		self.var_covar_agg['began_loggin_at']                       = itern
+		outfile    = os.path.join(outdir,'var_covar','mean_var_covar_{}.pkl'.format(REPLICATE_N))
+		_ = {
+			'phenotype_agg'   : self.mean_phen_agg,
+			'elapsed'         : self.var_covar_agg[ 'elapsed'         ],
+			'began_loggin_at' : self.var_covar_agg[ 'began_loggin_at' ],
+			'logged_every'    : self.var_covar_agg[ 'logged_every'    ]
+		}
+		with open(outfile,'wb') as log:
+			pickle.dump(_, log)
 
-	# def get_var_covar(self)->List[np.ndarray]:
-		
-	# 	traitsvar = np.array([ np.var(self.PHNS[:,_]) for _ in range(0,4)], dtype=np.float64) 
-	# 	# cov = np.cov([ self.PHNS[:,_] for _ in range(0,4)], bias=True, rowvar=True)
-	# 	cov       = np.cov(self.PHNS, bias=True, rowvar=False)
+	def log_var_covar(self):
+		self.mean_phen_agg = np.row_stack([ self.mean_phen_agg, np.mean(self.PHNS, axis=0) ])
 
-	# 	t1t2 = cov[0,1]
-	# 	t1t3 = cov[0,2]
-	# 	t1t4 = cov[0,3]
-	# 	t2t3 = cov[1,2]
-	# 	t2t4 = cov[1,3]
-	# 	t3t4 = cov[2,3]
+		self.var_covar_agg['elapsed']                              += 1
+		if                 self.var_covar_agg['began_loggin_at'] == -1:
+			self.var_covar_agg['began_loggin_at']                       = self.it
 
-	# 	return [np.array(traitsvar), np.array([t1t2,t1t3,t1t4,t2t3,t2t4,t3t4])]
-
-	# def write_mean_var_covar(self,outdir):
-	# 	outfile    = os.path.join(outdir,'var_covar','mean_var_covar_{}.json'.format(REPLICATE_N))
-	# 	_ = {
-	# 		'var'            : self.var_covar_agg['var'    ].tolist(),
-	# 		'covar'          : self.var_covar_agg['covar'  ].tolist(),
-	# 		'elapsed'        : self.var_covar_agg['elapsed'],
-	# 		'began_loggin_at': self.var_covar_agg[ 'began_loggin_at' ],
-	# 		'logged_every'   : self.var_covar_agg[ 'logged_every' ]
-	# 	}
-	# 	with open(outfile,'w') as log:
-	# 		json.dump(_, log)
-
-	
 	def shift_landscape(
 	 	self,
 	 	LANDSCAPE_INCREMENT: float,
@@ -343,7 +368,6 @@ class Universe:
 	 					...
 	 			else: 
 	 				self.mean += np.random.choice([1,-1])*LANDSCAPE_INCREMENT
-				
 	 	#? Uncorellated shifts
 	 	else:
 	 		# *Large IT
@@ -378,38 +402,51 @@ class Universe:
 	 				else: 
 	 					coin = np.random.choice([1,-1])
 	 					self.mean[i] += coin*LANDSCAPE_INCREMENT
+def print_receipt()->None:
+	receipt = {
+		  "ITSTART"                      : ITSTART                                                            ,
+		  "ITEND"                        : ITEND                                                              ,
+		  "REPLICATE_N"                   : REPLICATE_N                                                         ,
+		  "OUTDIR"                       : OUTDIR                                                             ,
+		  "RESSURECT_PATH"               : RESSURECT_PATH                                                     ,
+		  "INDTYPE"                      : INDTYPE                                                            ,
+		  "POPN"                         : POPN                                                               ,
+		  "SHIFTING_FITNESS_PEAK"        : SHIFTING_FITNESS_PEAK                                              ,
+		  "LS_INCREMENT"                 : LS_INCREMENT                                                       ,
+		  "MUTATION_RATE_ALLELE"         : MUTATION_RATE_ALLELE                                               ,
+		  "MUTATION_RATE_CONTRIB_CHANGE" : MUTATION_RATE_CONTRIB_CHANGE                                       ,
+		  "DEGREE"                       : DEGREE                                                             ,
+		  "LS_SHIFT_EVERY"                : LS_SHIFT_EVERY                                                      ,
+		  "STD"                          : STD                                                                ,
+		  "AMPLITUDE"                    : AMPLITUDE                                                          ,
+		  "LOG_FIT_EVERY"                : LOG_FIT_EVERY                                                      ,
+		  "LOG_VAR_EVERY"                : LOG_VAR_EVERY                                                      ,
+		  "date_finished"                : datetime                    .now().strftime("%I:%M%p on %B %d, %Y"),
+		  "date_started"                 : BEGIN_DATE                                                         ,
+		"PICKING_MEAN_STD" : [*PICKING_MEAN_STD]
+	}
+	with open(os.path.join(OUTDIR, "parameters_replicate{}.json".format(REPLICATE_N)),'w') as infile:
+		json.dump(receipt, infile)
 
 
 #***************** INITS ***************
-alls     = np.array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles'     ] for i in range(POPN) ], dtype=np.float64)
-gpms     = np.array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float64)
-phns     = np.array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float64)
-Fitmap   = FitnessMap(1)
-universe = Universe(0,
-                    alls,
-                    gpms,
-                    phns,
-                    Fitmap,
-                    np.array([0,0,0,0], dtype=np.float64))
 
-#*******************************************************Y
+alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
+gpms     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float64)
+phns     = np        .array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float64)
+Fitmap   = FitnessMap      (1)
+universe = Universe        (ITSTART,
+									alls,
+									gpms,
+									phns,
+									Fitmap,
+									np.array([0,0,0,0], dtype=np.float64))
 
-#!  -  +  -  + -  +  -  + 
+
 for it in range(ITSTART, ITEND+1): universe.tick()
-#!  -  +  -  + -  +  -  + 
 
 if OUTDIR:
     with open(os.path.join(OUTDIR,'fitness_data','data{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(universe.fitmean_agg, f)
-    # universe.write_mean_var_covar(OUTDIR)
+    universe.write_covar_pkl(OUTDIR)
 print_receipt()
 
-# p = np.array(INDIVIDUAL_INITS['99']['coefficients']) @ np.array(INDIVIDUAL_INITS['99']['alleles']) 
-# print(p)
-print("------ End ---------")
-# pprint(universe.GPMS)
-
-
-print("Covar at end")
-avgphens_time = np.array( universe.mean_phen_agg )
-pprint(np.cov( avgphens_time.T))
-# pprint(np.cov(avgphens_time,rowvar=False))
