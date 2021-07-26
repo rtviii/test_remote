@@ -34,18 +34,9 @@ for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_
 	fitall_asym += np.array( data[:,0])
 	ca          += 1
 
-fitall_sym                                =                       fitall_sym  /cs
-fitall_asym                               =                       fitall_asym /ca
-time                                      =                       np         . arange  (len(fitall_sym))
-
-plt.plot(time , fitall_sym , label="Correlated (Exp {})" . format     ( exp_sym  ) , c="orange" )
-plt.plot(time , fitall_asym, label="Uncorrelated (Exp {})".format     ( exp_asym ) , c="blue" )
-figure = plt.gcf()
-plt.legend()
-figure.set_size_inches(20,8)
 plt.title("Average Fitness")
 plt.suptitle(f"Experiments {exp_sym},{exp_asym}",fontsize=20)
-figure.text(0.5, 0.04, 'BD Process Iteration (100000 iterations)', ha='center', va='center')
+figure.text(0.5, 0.04, 'BD Process Iteration (every 1000 iterations)', ha='center', va='center')
 plt.show()
 
 

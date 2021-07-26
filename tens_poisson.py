@@ -49,11 +49,11 @@ REPLICATE_N                  = int (args .siminst if args.siminst is not None el
 OUTDIR                       = args.outdir if args.outdir is not None else 0
 RESSURECT_PATH               = args.resurrect if args.resurrect is not None else 0
 INDTYPE                      = args.type
-POPN                         = args.initial_number if args.initial_number is not None else 100
+POPN                         = args.initial_number if args.initial_number is not None else 10
 SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LS_INCREMENT                 = float(args.landscape_increment)
-MUTATION_RATE_ALLELE         = 5 if args.almrate is None else float(args.almrate ) #? in entry-mutations per generation
-MUTATION_RATE_CONTRIB_CHANGE = 5 if args.gpmrate is None else float( args.gpmrate ) #? in mutations per generation
+MUTATION_RATE_ALLELE         = 100 if args.almrate is None else float(args.almrate ) #? in entry-mutations per generation
+MUTATION_RATE_CONTRIB_CHANGE = 100 if args.gpmrate is None else float( args.gpmrate ) #? in mutations per generation
 DEGREE                       = 1
 LS_SHIFT_EVERY               = int(1e4)
 STD                          = 1
@@ -217,14 +217,13 @@ class Universe:
 		self.mutation_plan_alleles = make_mutation_plan_alleles(MUTATION_RATE_ALLELE)
 
 		# ? ------------------------------ [ AGGREGATORS ]
-		self.var_covar_agg = {
+		self.covar_agg = {
 			"began_loggin_at": -1,
 			"logged_every"   : LOG_VAR_EVERY,
-			'phenotype_agg' : [],
+			'covar_slices'   :   np.array([np.cov(self.PHNS.T)])  ,
 			"elapsed"        : 0
 		}
 		self.fitmean_agg   = np.array([])
-		self.mean_phen_agg = np.mean(self.PHNS, axis=0)
 
 	def pick_parent(self)->int:
 		indices   = np.arange(len( self.PHNS ))
@@ -239,12 +238,7 @@ class Universe:
 
 	def tick(self):
 
-		# pprint(self.mutation_plan)
-
-
-
-
-
+		print(self.it)
 		if self.it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(self.it%(LOG_VAR_EVERY)):
 			self.log_var_covar()
 
@@ -252,10 +246,8 @@ class Universe:
 			cur_it           = np.array([self.get_avg_fitness(), *np.around(self.mean,2)])
 			self.fitmean_agg = np.array([*self.fitmean_agg, cur_it])
 
-
 		if ( not self.it % LS_SHIFT_EVERY ):
 			self.shift_landscape(LS_INCREMENT,SHIFTING_FITNESS_PEAK)
-
 
 		death_index = self.pick_death()
 		birth_index = self.pick_parent()
@@ -263,35 +255,14 @@ class Universe:
 		_alleles    = np.copy(self.ALLS[birth_index])
 		_contribs   = np.copy(self.GPMS[birth_index])
 		while bool(len(self.mutation_plan_alleles['iterns'])) and self.it % GENERATION == self.mutation_plan_alleles['iterns'][0]:
-			# print(f"Itern {self.it}")
-			# print("__________________________________")
-			# pprint(self.mutation_plan_alleles)
 			posn = self.mutation_plan_alleles['posns'][0]
-			# print("Mut posn " ,posn)
-			# print("alleles before")
-			# pprint(_alleles)
 			_alleles[posn] += np.random.normal(*PICKING_MEAN_STD)
-			# print("allels after:")
-			# pprint(_alleles)
-			# print("__________________________________")
-
-
 			self.mutation_plan_alleles['iterns'] = self.mutation_plan_alleles['iterns'][1:]
 			self.mutation_plan_alleles['posns' ] = self.mutation_plan_alleles['posns' ][1:]
 
 		while bool(len(self.mutation_plan_contrib['iterns'])) and self.it % GENERATION == self.mutation_plan_contrib['iterns'][0]:
-			# print(f"Itern {self.it}")
-			# print("__________________________________")
-			# pprint(self.mutation_plan_contrib)
 			posn = tuple(self.mutation_plan_contrib['posns'][0])
-			# print("Mut posn " ,posn)
-			# pprint(_contribs)
 			_contribs[posn] += np.random.normal(*PICKING_MEAN_STD)
-			# print("Contribs after:")
-			pprint(_contribs)
-			# print("__________________________________")
-
-
 			self.mutation_plan_contrib['iterns'] = self.mutation_plan_contrib['iterns'][1:]
 			self.mutation_plan_contrib['posns' ] = self.mutation_plan_contrib['posns' ][1:]
 			
@@ -299,17 +270,7 @@ class Universe:
 
 			self.mutation_plan_contrib = make_mutation_plan_contrib(MUTATION_RATE_CONTRIB_CHANGE)
 			self.mutation_plan_alleles = make_mutation_plan_alleles(MUTATION_RATE_ALLELE)
-			# print("===================================================")
-			# print(f"Iteration :{self.it}")
-			# pprint("Updated mutation plan")
-			# pprint(self.mutation_plan)
-			# print("===================================================")
-
 		
-		
-		
-
-
 		self.PHNS[death_index] =  _contribs @ _alleles.T
 		self.ALLS[death_index] = _alleles
 		self.GPMS[death_index] = _contribs
@@ -322,20 +283,20 @@ class Universe:
 
 		outfile    = os.path.join(outdir,'var_covar','mean_var_covar_{}.pkl'.format(REPLICATE_N))
 		_ = {
-			'phenotype_agg'   : self.mean_phen_agg,
-			'elapsed'         : self.var_covar_agg[ 'elapsed'         ],
-			'began_loggin_at' : self.var_covar_agg[ 'began_loggin_at' ],
-			'logged_every'    : self.var_covar_agg[ 'logged_every'    ]
+			'covar_slices'   : self.covar_agg['covar_slices'],
+			'elapsed'        : self.covar_agg[ 'elapsed'         ],
+			'began_loggin_at': self.covar_agg[ 'began_loggin_at' ],
+			'logged_every'   : self.covar_agg[ 'logged_every'    ]
 		}
 		with open(outfile,'wb') as log:
 			pickle.dump(_, log)
 
 	def log_var_covar(self):
-		self.mean_phen_agg = np.row_stack([ self.mean_phen_agg, np.mean(self.PHNS, axis=0) ])
 
-		self.var_covar_agg['elapsed']                              += 1
-		if                 self.var_covar_agg['began_loggin_at'] == -1:
-			self.var_covar_agg['began_loggin_at']                       = self.it
+		self.covar_agg['covar_slices'] = np.row_stack([ self.covar_agg['covar_slices'],np.array([ np.cov(self.PHNS.T) ] ) ] )   
+		self.covar_agg['elapsed']                              += 1
+		if self.covar_agg['began_loggin_at'] == -1:
+			self.covar_agg['began_loggin_at']= self.it
 
 	def shift_landscape(
 	 	self,
