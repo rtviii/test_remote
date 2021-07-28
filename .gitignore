@@ -4,8 +4,4 @@ polyvenv
 *.json
 *.zip
 *.png
-
-
-
-
 *.pkl

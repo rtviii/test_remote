@@ -15,6 +15,7 @@ import argparse
 import pickle
 
 VERBOSE = False
+
 def dir_path(string):
     if string == "0":
         return None
@@ -418,9 +419,22 @@ def print_receipt()->None:
 
 #***************** INITS ***************
 
-alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
-gpms     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float64)
-phns     = np        .array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float64)
+alls     = np        .array([  np.array([1,1,1,1]),  np.array([2,2,2,2]) ], dtype=np.float64)
+gpms     = np        .array([ np.array([
+	[1,1,1,1],
+	[1,1,1,1],
+	[1,1,1,1],
+	[1,1,1,1],
+]),
+np.array([
+	[2,2,2,2],
+	[2,2,2,2],
+	[2,2,2,2],
+	[2,2,2,2],
+])	], dtype=np.float64)
+
+phns     = np        .array( [gpms[i]@ alls[i].T for i in range(2) ], dtype=np.float64)
+
 Fitmap   = FitnessMap      (1)
 universe = Universe        (ITSTART,
 									alls,
