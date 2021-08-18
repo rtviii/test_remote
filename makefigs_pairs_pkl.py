@@ -12,6 +12,7 @@ import pickle
 exp_sym  = int( sys.argv[1] )
 exp_asym = int( sys.argv[2] )
 folder   = str( sys.argv[3] )
+title    = str( sys.argv[4] )
 
 fitall_sym  = 0
 fitall_asym = 0
@@ -34,8 +35,19 @@ for file in glob.glob(f"/home/rxz/dev/polygenicity-simulations/{folder}/exp{exp_
 	fitall_asym += np.array( data[:,0])
 	ca          += 1
 
+fitall_sym                                =                       fitall_sym  /cs
+fitall_asym                               =                       fitall_asym /ca
+time                                      =                       np         . arange  (len(fitall_sym))
+
+plt.plot(time , fitall_sym , label="Correlated (Exp {})" . format     ( exp_sym  ) , c="black" )
+plt.plot(time , fitall_asym, label="Uncorrelated (Exp {})".format     ( exp_asym ) , c="orange",linestyle='dotted' )
+
+figure = plt.gcf()
+plt.legend()
+figure.set_size_inches(20,8)
+figure = plt.gcf()
 plt.title("Average Fitness")
-plt.suptitle(f"Experiments {exp_sym},{exp_asym}",fontsize=20)
+plt.suptitle(title,fontsize=20)
 figure.text(0.5, 0.04, 'BD Process Iteration (every 1000 iterations)', ha='center', va='center')
 plt.show()
 

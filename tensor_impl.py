@@ -167,26 +167,26 @@ def mutate_alleles(alleles:np.ndarray)->None:
 	
 def print_receipt()->None:
 	receipt = {
-		  "ITSTART"                      : ITSTART                                                            ,
-		  "ITEND"                        : ITEND                                                              ,
-		  "REPLICATE_N"                   : REPLICATE_N                                                         ,
-		  "OUTDIR"                       : OUTDIR                                                             ,
-		  "RESSURECT_PATH"               : RESSURECT_PATH                                                     ,
-		  "INDTYPE"                      : INDTYPE                                                            ,
-		  "POPN"                         : POPN                                                               ,
-		  "SHIFTING_FITNESS_PEAK"        : SHIFTING_FITNESS_PEAK                                              ,
-		  "LS_INCREMENT"                 : LS_INCREMENT                                                       ,
-		  "MUTATION_RATE_ALLELE"         : MUTATION_RATE_ALLELE                                               ,
-		  "MUTATION_RATE_CONTRIB_CHANGE" : MUTATION_RATE_CONTRIB_CHANGE                                       ,
-		  "DEGREE"                       : DEGREE                                                             ,
-		  "LS_SHIFT_EVERY"                : LS_SHIFT_EVERY                                                      ,
-		  "STD"                          : STD                                                                ,
-		  "AMPLITUDE"                    : AMPLITUDE                                                          ,
-		  "LOG_FIT_EVERY"                : LOG_FIT_EVERY                                                      ,
-		  "LOG_VAR_EVERY"                : LOG_VAR_EVERY                                                      ,
-		  "date_finished"                : datetime                    .now().strftime("%I:%M%p on %B %d, %Y"),
-		  "date_started"                 : BEGIN_DATE                                                         ,
-		"PICKING_MEAN_STD" : [*PICKING_MEAN_STD]
+		  "ITSTART"                     : ITSTART,
+		  "ITEND"                       : ITEND,
+		  "REPLICATE_N"                 : REPLICATE_N,
+		  "OUTDIR"                      : OUTDIR,
+		  "RESSURECT_PATH"              : RESSURECT_PATH,
+		  "INDTYPE"                     : INDTYPE,
+		  "POPN"                        : POPN,
+		  "SHIFTING_FITNESS_PEAK"       : SHIFTING_FITNESS_PEAK,
+		  "LS_INCREMENT"                : LS_INCREMENT,
+		  "MUTATION_RATE_ALLELE"        : MUTATION_RATE_ALLELE,
+		  "MUTATION_RATE_CONTRIB_CHANGE": MUTATION_RATE_CONTRIB_CHANGE,
+		  "DEGREE"                      : DEGREE,
+		  "LS_SHIFT_EVERY"              : LS_SHIFT_EVERY,
+		  "STD"                         : STD,
+		  "AMPLITUDE"                   : AMPLITUDE,
+		  "LOG_FIT_EVERY"               : LOG_FIT_EVERY,
+		  "LOG_VAR_EVERY"               : LOG_VAR_EVERY,
+		  "date_finished"               : datetime                    .now().strftime("%I:%M%p on %B %d, %Y"),
+		  "date_started"                : BEGIN_DATE,
+		  "PICKING_MEAN_STD"            : [*PICKING_MEAN_STD]
 	}
 	with open(os.path.join(OUTDIR, "parameters_replicate{}.json".format(REPLICATE_N)),'w') as infile:
 		json.dump(receipt, infile)

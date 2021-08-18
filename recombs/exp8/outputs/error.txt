@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "../recomb.py", line 405, in <module>
+    alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
+  File "../recomb.py", line 405, in <listcomp>
+    alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
+KeyError: '8'

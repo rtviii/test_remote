@@ -415,7 +415,6 @@ def print_receipt()->None:
 	with open(os.path.join(OUTDIR, "parameters_replicate{}.json".format(REPLICATE_N)),'w') as infile:
 		json.dump(receipt, infile)
 
-
 #***************** INITS ***************
 
 alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
@@ -432,6 +431,7 @@ universe = Universe        (ITSTART,
 
 
 for it in range(ITSTART, ITEND+1): universe.tick()
+
 if OUTDIR:
     with open(os.path.join(OUTDIR,'fitness_data','data{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(universe.fitmean_agg, f)
     universe.write_covar_pkl(OUTDIR)

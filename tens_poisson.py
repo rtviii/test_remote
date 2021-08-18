@@ -6,7 +6,9 @@ from functools import reduce
 import json
 from time import time
 import sys, os
+from tracemalloc import start
 from typing import Callable, List
+from unicodedata import unidata_version
 import numpy as np
 import math
 import argparse
@@ -38,18 +40,17 @@ parser .add_argument ('-t'        , '--type'                    , type   = int  
 parser .add_argument ('-initn'    , '--initial_number'          , type   = int          ,                                help = 'Starting number of individuals'                                                                                                                          )
 parser .add_argument ('-gpm_rate' , '--gpmrate'                 , type   = float        ,                                help = 'GP-map contribution change mutation rate'                                                                                                                )
 parser .add_argument ('-alm_rate' , '--almrate'                 , type   = float        ,                                help = 'Allelic mutation rate'                                                                                                                                   )
-parser .add_argument ('-re'       , '--resurrect'               , type   = dir_path     ,                                help = 'Path to reinstate the population from.'                                                                                                                  )
-# parser .add_argument ('-logvar'   , '--log_variance_covariance' , action = 'store_true' ,                                help = 'Whether to collect variance and covariance values for the last tenth of the replicate run.'                                                              )
+parser.  add_argument('--resurrect',                       action         ='store_true'                                                                        )
 
 args                         = parser .parse_args()
-GENERATION 					 = 1000
+GENERATION                   = 1000
 ITSTART                      = int(args.iter_start)
 ITEND                        = int(args.iter_end)
 REPLICATE_N                  = int (args .siminst if args.siminst is not None else 0)
 OUTDIR                       = args.outdir if args.outdir is not None else 0
-RESSURECT_PATH               = args.resurrect if args.resurrect is not None else 0
+RESSURECT                    = args.resurrect 
 INDTYPE                      = args.type
-POPN                         = args.initial_number if args.initial_number is not None else 10
+POPN                         = args.initial_number if args.initial_number is not None else 1000
 SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LS_INCREMENT                 = float(args.landscape_increment)
 MUTATION_RATE_ALLELE         = 100 if args.almrate is None else float(args.almrate ) #? in entry-mutations per generation
@@ -67,7 +68,7 @@ INDIVIDUAL_INITS     =  {
 #    mendelian
    "1":{
         'trait_n' :4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float16),
         'coefficients'  :  np.array([
                         [1,0,0,0],
                         [0,1,0,0],
@@ -78,18 +79,18 @@ INDIVIDUAL_INITS     =  {
 #    modularpositive
    "2":{
         'trait_n' :4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float16),
         'coefficients'  :  np.array([
                         [1,1,0,0],
                         [1,1,0,0],
                         [0,0,1,1],
                         [0,0,1,1],
-                    ], dtype=np.float64) 
+                    ], dtype=np.float16) 
    },
 #    modularskipping
    "3":{
         'trait_n' :4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float16),
         'coefficients'  :  np.array([
                         [1,1,0,0],
                         [1,-1,0,0],
@@ -100,27 +101,27 @@ INDIVIDUAL_INITS     =  {
    "4":{
 
         'trait_n'       :  4,
-        'alleles'       :  np.array([1,1,1,1], dtype=np.float64),
+        'alleles'       :  np.array([1,1,1,1], dtype=np.float16),
         'coefficients'  :  np.array([
                         [1,1,1,1],
                         [1,1,1,1],
                         [1,1,1,1],
                         [1,1,1,1],
-                    ], dtype=np.float64)
+                    ], dtype=np.float16)
    },
 }
 
 [ os.makedirs(os.path.join(OUTDIR, intern_path), exist_ok=True) for intern_path in ['var_covar','fitness_data']]
 
 # Pick a number from poisson
-
 def make_mutation_plan_alleles(
 	_lambda:float,
 	period :int=GENERATION):
 
 	"""
-	@lambda - the rate of the poisson distribution, in this case -- mutrate per generation
-	@period - number the interval over which to pick, in this case a single generation
+	_lambda - the rate of the poisson distribution, in this case -- mutrate per generation
+
+	period - number the interval over which to pick, in this case a single generation
 	"""
 
 	#? how many mutations occur in a given period (Generation)
@@ -160,7 +161,6 @@ def make_mutation_plan_contrib(
 		"iterns": iterns
 	}
 
-
 def mutate_gpmap(contributions):
 
 	probs           = np    .random.uniform(low=0, high=1, size=(4,4)).round(4)
@@ -180,15 +180,16 @@ def mutate_alleles(alleles:np.ndarray)->None:
 
 class FitnessMap:
 
-	def __init__(self, std):
-		self.std = std
-	def getmap(self, mean):
+	std = 1
+
+	@classmethod
+	def getmap(cls, mean):
 
 		u   = mean
 		exp = math.exp
 
 		def _(phenotype:np.ndarray):
-			return AMPLITUDE * exp(-(np.sum(((phenotype - u)**2)/(2*self.std**2))))
+			return AMPLITUDE * exp(-(np.sum(((phenotype - u)**2)/(2*cls.std**2))))
 		return _
 
 class Universe:
@@ -199,7 +200,6 @@ class Universe:
 		ALLS: np.ndarray,
 		GPMS: np.ndarray,
 		PHNS: np.ndarray,
-		fmap: FitnessMap,
 		mean: np.ndarray,
 		) -> None:
 
@@ -211,7 +211,6 @@ class Universe:
 		self.PHNS          = PHNS
 
 		# ? ------------------------------ [ ENV ]
-		self.fitmap                = fmap
 		self.mean                  = mean
 		self.mutation_plan_contrib = make_mutation_plan_contrib(MUTATION_RATE_CONTRIB_CHANGE)
 		self.mutation_plan_alleles = make_mutation_plan_alleles(MUTATION_RATE_ALLELE)
@@ -225,9 +224,23 @@ class Universe:
 		}
 		self.fitmean_agg   = np.array([])
 
+
+	def save_state(self):
+		state = {
+			"last_iteration": self.it,
+			"alleles"       : self.ALLS,
+			"gpms"          : self.GPMS,
+			"fitness_mean"  : self.mean
+		}
+
+		with open(os.path.join(OUTDIR,'state_{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(state, f)
+
+
+
 	def pick_parent(self)->int:
+
 		indices   = np.arange(len( self.PHNS ))
-		fitnesses = np.array( [  *map( Fitmap.getmap(self.mean), self.PHNS)] )
+		fitnesses = np.array( [  *map( FitnessMap.getmap(self.mean), self.PHNS)] )
 		cumfit    = reduce(lambda x,y : x+y, fitnesses)
 
 		return np.random.choice(indices,p=fitnesses/cumfit)
@@ -277,11 +290,14 @@ class Universe:
 		self.it += 1
 
 	def get_avg_fitness(self)->float:
-		return reduce(lambda x,y: x + y, map(self.fitmap.getmap(self.mean), self.PHNS))/len(self.PHNS)
+		return reduce(lambda x,y: x + y, map(FitnessMap.getmap(self.mean), self.PHNS))/len(self.PHNS)
 
-	def write_covar_pkl(self,outdir):
+	def write_fitness_data(self):
+		with open(os.path.join(OUTDIR,'fitness_data','data{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(self.fitmean_agg, f)
 
-		outfile    = os.path.join(outdir,'var_covar','mean_var_covar_{}.pkl'.format(REPLICATE_N))
+	def write_covar_pkl(self):
+
+		outfile    = os.path.join(OUTDIR,'var_covar','mean_var_covar_{}.pkl'.format(REPLICATE_N))
 		_ = {
 			'covar_slices'   : self.covar_agg['covar_slices'],
 			'elapsed'        : self.covar_agg[ 'elapsed'         ],
@@ -302,8 +318,8 @@ class Universe:
 	 	self,
 	 	LANDSCAPE_INCREMENT: float,
 	 	CORRELATED         : bool)->None  : 
+		#? Corellated shifts
 
-	#? Corellated shifts
 	 	if CORRELATED:
 	 		# *Large IT
 	 		if abs(LANDSCAPE_INCREMENT) > 0.9:
@@ -363,51 +379,85 @@ class Universe:
 	 				else: 
 	 					coin = np.random.choice([1,-1])
 	 					self.mean[i] += coin*LANDSCAPE_INCREMENT
+
 def print_receipt()->None:
 	receipt = {
-		  "ITSTART"                      : ITSTART                                                            ,
-		  "ITEND"                        : ITEND                                                              ,
-		  "REPLICATE_N"                   : REPLICATE_N                                                         ,
-		  "OUTDIR"                       : OUTDIR                                                             ,
-		  "RESSURECT_PATH"               : RESSURECT_PATH                                                     ,
-		  "INDTYPE"                      : INDTYPE                                                            ,
-		  "POPN"                         : POPN                                                               ,
-		  "SHIFTING_FITNESS_PEAK"        : SHIFTING_FITNESS_PEAK                                              ,
-		  "LS_INCREMENT"                 : LS_INCREMENT                                                       ,
-		  "MUTATION_RATE_ALLELE"         : MUTATION_RATE_ALLELE                                               ,
-		  "MUTATION_RATE_CONTRIB_CHANGE" : MUTATION_RATE_CONTRIB_CHANGE                                       ,
-		  "DEGREE"                       : DEGREE                                                             ,
-		  "LS_SHIFT_EVERY"                : LS_SHIFT_EVERY                                                      ,
-		  "STD"                          : STD                                                                ,
-		  "AMPLITUDE"                    : AMPLITUDE                                                          ,
-		  "LOG_FIT_EVERY"                : LOG_FIT_EVERY                                                      ,
-		  "LOG_VAR_EVERY"                : LOG_VAR_EVERY                                                      ,
-		  "date_finished"                : datetime                    .now().strftime("%I:%M%p on %B %d, %Y"),
-		  "date_started"                 : BEGIN_DATE                                                         ,
-		"PICKING_MEAN_STD" : [*PICKING_MEAN_STD]
+		  "ITSTART"                     : ITSTART,
+		  "ITEND"                       : ITEND,
+		  "REPLICATE_N"                 : REPLICATE_N,
+		  "OUTDIR"                      : OUTDIR,
+		  "RESSURECTED"              : RESSURECT,
+		  "INDTYPE"                     : INDTYPE,
+		  "POPN"                        : POPN,
+		  "SHIFTING_FITNESS_PEAK"       : SHIFTING_FITNESS_PEAK,
+		  "LS_INCREMENT"                : LS_INCREMENT,
+		  "MUTATION_RATE_ALLELE"        : MUTATION_RATE_ALLELE,
+		  "MUTATION_RATE_CONTRIB_CHANGE": MUTATION_RATE_CONTRIB_CHANGE,
+		  "DEGREE"                      : DEGREE,
+		  "LS_SHIFT_EVERY"              : LS_SHIFT_EVERY,
+		  "STD"                         : STD,
+		  "AMPLITUDE"                   : AMPLITUDE,
+		  "LOG_FIT_EVERY"               : LOG_FIT_EVERY,
+		  "LOG_VAR_EVERY"               : LOG_VAR_EVERY,
+		  "date_finished"               : datetime                    .now().strftime("%I:%M%p on %B %d, %Y"),
+		  "date_started"                : BEGIN_DATE,
+		  "PICKING_MEAN_STD"            : [*PICKING_MEAN_STD]
 	}
 	with open(os.path.join(OUTDIR, "parameters_replicate{}.json".format(REPLICATE_N)),'w') as infile:
 		json.dump(receipt, infile)
 
 
-#***************** INITS ***************
-
-alls     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float64)
-gpms     = np        .array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float64)
-phns     = np        .array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float64)
-Fitmap   = FitnessMap      (1)
-universe = Universe        (ITSTART,
-									alls,
-									gpms,
-									phns,
-									Fitmap,
-									np.array([0,0,0,0], dtype=np.float64))
 
 
-for it in range(ITSTART, ITEND+1): universe.tick()
+def ressurect():
+	state_loc=os.path.join(OUTDIR, 'state_{}.pkl'.format(REPLICATE_N))
+
+	with open(state_loc, 'rb') as inf:
+		state   = pickle.load(inf)
+		it      = state['last_iteration']
+		ITSTART = it
+		alls    = state['alleles']
+		gpms    = state['gpms']
+		phns    = np        .array( [gpms[i]@ alls[i].T for i in range(alls.shape[0]) ], dtype=np.float16)
+	# fitmap  = FitnessMap       (1)
+		fitmean = state['fitness_mean']
+
+		if ITEND <= it:
+			print(f"End iteration that was specified {ITEND} is lower than this population's 'age'({it}). Exited ")
+			exit(1)
+
+		return  [Universe        (it,
+											alls,
+											gpms,
+											phns,
+											fitmean)
+											,
+											ITSTART]
+
+
+
+if RESSURECT:
+	[ u,start_iter ] = ressurect()
+	ITSTART = start_iter
+	for it in range(ITSTART, ITEND+1): u.tick()
+else:
+	alls    = np         .array([ INDIVIDUAL_INITS[str( INDTYPE )]['alleles' ] for i in range(POPN) ], dtype=np.float16)
+	gpms    = np         .array([ INDIVIDUAL_INITS[str( INDTYPE )]['coefficients'] for i in range(POPN)	], dtype=np.float16)
+	phns    = np         .array( [gpms[i]@ alls[i].T for i in range(POPN) ], dtype=np.float16)
+	fitmean = np        .array ([0,0,0,0], dtype=np.float16)
+
+	u = Universe        (ITSTART,
+										alls,
+										gpms,
+										phns,
+										fitmean)
+	for it in range(ITSTART, ITEND+1): u.tick()
+
+
 
 if OUTDIR:
-    with open(os.path.join(OUTDIR,'fitness_data','data{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(universe.fitmean_agg, f)
-    universe.write_covar_pkl(OUTDIR)
+	u.write_fitness_data()
+	u.write_covar_pkl()
+	u.save_state()
 print_receipt()
 
