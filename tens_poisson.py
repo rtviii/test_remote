@@ -453,8 +453,6 @@ else:
 										fitmean)
 	for it in range(ITSTART, ITEND+1): u.tick()
 
-
-
 if OUTDIR:
 	u.write_fitness_data()
 	u.write_covar_pkl()

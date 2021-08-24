@@ -217,10 +217,11 @@ class Universe:
 		self.mutation_plan_alleles = make_mutation_plan_alleles(MUTATION_RATE_ALLELE)
 
 		# ? ------------------------------ [ AGGREGATORS ]
-		self.m1 = []
-		self.m2 = []
-		self.m3 = []
-		self.m4 = []
+
+		self.m1 = [0]
+		self.m2 = [0]
+		self.m3 = [0]
+		self.m4 = [0]
 
 		self.covar_agg = {
 			"began_loggin_at": -1,
@@ -282,14 +283,14 @@ class Universe:
 		self.GPMS[death_index] = contribs_xx
 
 	def tick(self):
-		if self.it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(self.it%(LOG_VAR_EVERY)):
+		if self.it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(self.it%(LOG_VAR_EVERY)) :
 			self.log_var_covar()
 
 		if not self.it % LOG_FIT_EVERY:
 			cur_it           = np.array([self.get_avg_fitness(), *np.around(self.mean,2)])
 			self.fitmean_agg = np.array([*self.fitmean_agg, cur_it])
 
-		if ( not self.it % LS_SHIFT_EVERY ) and self.it != 0:
+		if ( not self.it % LS_SHIFT_EVERY ) and self.it!=0:
 			print("SHIFTIN LANDSACPE at it", self.it)
 			self.shift_landscape(LS_INCREMENT,SHIFTING_FITNESS_PEAK)
 			print("new mean is ", self.mean)
@@ -438,6 +439,9 @@ for it in range(ITSTART, ITEND+1):
 	universe.tick()
 
 
+if OUTDIR:
+    with open(os.path.join(OUTDIR,'fitness_data','data{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(universe.fitmean_agg, f)
+
 
 m1 = np.array( universe.m1 )
 m2 = np.array( universe.m2 )
@@ -454,6 +458,7 @@ plt.plot(time2,m2, label="Mean Factor 2", c="black"  , linewidth=4   , alpha =1 
 # plt.plot(time2,m3, label="Mean Factor 3", c="cyan"   , linewidth=3   , alpha =1   , linestyle='--'    )
 plt.plot(time2,m3, label="Mean Factor 3", c="cyan"   , linewidth=3   , alpha =1   , linestyle='--'    ,  dashes=(6,20) )
 plt.plot(time2,m4, label="Mean Factor 4", c="darkseagreen"  , linewidth=10   , alpha =0.2 , linestyle='solid'                      )
+plt.yticks(np.arange(-1,1,0.2))
 plt.legend()
 plt.grid(alpha=0.5)
 
