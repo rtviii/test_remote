@@ -35,6 +35,7 @@ parser .add_argument ("-itend"    , "--iter_end"                , type   = int  
 parser .add_argument ("-ls"       , "--landscape_increment"     , type   = float        ,required =True,                 help = "Simulation tag for the current instance."                                                                                                                )
 parser .add_argument ("-sim"      , "--siminst"                 , type   = int          ,                                help = "Simulation tag for the current instance."                                                                                                                )
 parser .add_argument ("-SP"       , "--shifting_peak"           , type   = int          ,required=True,choices =[0,1], help = "Flag for whether the fitness landscape changes or not."                                                                                                  )
+# parser .add_argument ("-SP"       , "--shifting_peak"           , type   = str          ,required=True,choices =['correlated','uncorrelated','pairwise'], help = "Flag for whether the fitness landscape changes or not."                                                                                                  )
 parser .add_argument ('-t'        , '--type'                    , type   = int          ,required =True,                 help = 'Types involved in experiment'                                                                                                                            )
 parser .add_argument ('-initn'    , '--initial_number'          , type   = int          ,                                help = 'Starting number of individuals'                                                                                                                          )
 parser .add_argument ('-gpm_rate' , '--gpmrate'                 , type   = float        ,                                help = 'GP-map contribution change mutation rate'                                                                                                                )
@@ -64,11 +65,12 @@ PICKING_MEAN_STD             = ( 0,0.5 )
 BEGIN_DATE                   = datetime.now().strftime("%I:%M%p on %B %d, %Y")
 
 
+#? Run Modular type without mutations ------------- [x] : modular3,modular4 <== mdodular_nomut.py
+#? Run baseline  ---------------------------------- [x] : control{1,2,7,8} <<== control.py
+#? Run Mendel and Web for longer -------------------[x]
 
-#? Run Modular type without mutations ------------- [ ]
-#? Run baseline baseline -------------------------- [x]
-#? Run Mendel and Web for longer -------------------[ ]
 #? Implement and run pairwise landscape shifts------[ ]
+#? Additive Genetice Variance ----------------------[ ]
 
 
 
