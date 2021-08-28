@@ -1,4 +1,3 @@
-from pprint import pprint
 import random
 import timeit
 from datetime import datetime
@@ -64,6 +63,15 @@ LOG_VAR_EVERY                = int(1e3) # * generation
 PICKING_MEAN_STD             = ( 0,0.5 )
 BEGIN_DATE                   = datetime.now().strftime("%I:%M%p on %B %d, %Y")
 
+
+
+#? Run Modular type without mutations ------------- [ ]
+#? Run baseline baseline -------------------------- [x]
+#? Run Mendel and Web for longer -------------------[ ]
+#? Implement and run pairwise landscape shifts------[ ]
+
+
+
 INDIVIDUAL_INITS     =  {   
 #    mendelian
    "1":{
@@ -76,7 +84,7 @@ INDIVIDUAL_INITS     =  {
                         [0,0,0,1],
                     ])
    },
-#    modularpositive
+#    modular
    "2":{
         'trait_n' :4,
         'alleles'       :  np.array([1,1,1,1], dtype=np.float16),
@@ -224,7 +232,6 @@ class Universe:
 		}
 		self.fitmean_agg   = np.array([])
 
-
 	def save_state(self):
 		state = {
 			"last_iteration": self.it,
@@ -234,8 +241,6 @@ class Universe:
 		}
 
 		with open(os.path.join(OUTDIR,'state_{}.pkl'.format(REPLICATE_N)),'wb') as f: pickle.dump(state, f)
-
-
 
 	def pick_parent(self)->int:
 
@@ -251,7 +256,6 @@ class Universe:
 
 	def tick(self):
 
-		print(self.it)
 		if self.it > ITEND-(math.ceil((ITEND-ITSTART)/10)) and not(self.it%(LOG_VAR_EVERY)):
 			self.log_var_covar()
 

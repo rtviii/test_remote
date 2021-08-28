@@ -39,16 +39,22 @@ fitall_sym                                =                       fitall_sym  /c
 fitall_asym                               =                       fitall_asym /ca
 time                                      =                       np         . arange  (len(fitall_sym))
 
-plt.plot(time , fitall_sym , label="Correlated (Exp {})" . format     ( exp_sym  ) , c="black" )
-plt.plot(time , fitall_asym, label="Uncorrelated (Exp {})".format     ( exp_asym ) , c="orange",linestyle='dotted' )
+# plt.plot(time , fitall_sym , label="Correlated (Exp {})" . format     ( exp_sym  ) , c="black" )
+# plt.plot(time , fitall_asym, label="Uncorrelated (Exp {})".format     ( exp_asym ) , c="orange",linestyle='dotted' )
+
+plt.plot(time , fitall_sym , label="Correlated Landscape Shifts " . format     ( exp_sym  ) , c="black" )
+plt.plot(time , fitall_asym, label="Uncorrelated Landscape Shifts".format     ( exp_asym ) , c="orange",linestyle='dotted' )
 
 figure = plt.gcf()
-plt.legend()
+plt.legend(loc='lower right')
 figure.set_size_inches(20,8)
+plt.grid(alpha=0.5)
 figure = plt.gcf()
-plt.title("Average Fitness")
-plt.suptitle(title,fontsize=20)
-figure.text(0.5, 0.04, 'BD Process Iteration (every 1000 iterations)', ha='center', va='center')
+plt.ylabel('Average Fitness', fontsize=14)
+plt.xlabel('Generations (generation = 1000 iterations)', fontsize=14)
+# plt.title("Average Fitness")
+# plt.suptitle(title,fontsize=20)
+# figure.text(0.5, 0.04, 'Generations (generation = 1000 iterations)', ha='center', va='center')
 plt.show()
 
 
