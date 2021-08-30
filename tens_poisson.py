@@ -53,8 +53,8 @@ INDTYPE                      = args.type
 POPN                         = args.initial_number if args.initial_number is not None else 1000
 SHIFTING_FITNESS_PEAK        = args.shifting_peak
 LS_INCREMENT                 = float(args.landscape_increment)
-MUTATION_RATE_ALLELE         = 100 if args.almrate is None else float(args.almrate ) #? in entry-mutations per generation
-MUTATION_RATE_CONTRIB_CHANGE = 100 if args.gpmrate is None else float( args.gpmrate ) #? in mutations per generation
+MUTATION_RATE_ALLELE         = 5 if args.almrate is None else float(args.almrate ) #? in entry-mutations per generation
+MUTATION_RATE_CONTRIB_CHANGE = 5 if args.gpmrate is None else float( args.gpmrate ) #? in mutations per generation
 DEGREE                       = 1
 LS_SHIFT_EVERY               = int(1e4)
 STD                          = 1
@@ -68,8 +68,8 @@ BEGIN_DATE                   = datetime.now().strftime("%I:%M%p on %B %d, %Y")
 #? Run Modular type without mutations ------------- [x] : modular3,modular4 <== mdodular_nomut.py
 #? Run baseline  ---------------------------------- [x] : control{1,2,7,8} <<== control.py
 #? Run Mendel and Web for longer -------------------[x]
+#? Implement and run pairwise landscape shifts------[x]
 
-#? Implement and run pairwise landscape shifts------[ ]
 #? Additive Genetice Variance ----------------------[ ]
 
 
